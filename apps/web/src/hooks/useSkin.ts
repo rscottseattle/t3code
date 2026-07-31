@@ -12,6 +12,7 @@ const APP_SKIN_VALUES = [
   "charcoal-graphite",
   "charcoal-frost",
   "charcoal-ember",
+  "glass-aurora",
 ] as const;
 
 export const AppSkin = Schema.Literals(APP_SKIN_VALUES);
@@ -47,6 +48,11 @@ const SKIN_OPTIONS: ReadonlyArray<{ value: AppSkin; label: string; description: 
     value: "charcoal-ember",
     label: "Charcoal Ember",
     description: "Warm brown-charcoal, soft white text — evening lamp feel.",
+  },
+  {
+    value: "glass-aurora",
+    label: "Glass Aurora",
+    description: "Deep purple–blue gradients; frosted glass panels over a shiny aurora.",
   },
   {
     value: "default",

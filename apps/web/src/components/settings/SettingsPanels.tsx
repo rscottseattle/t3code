@@ -1063,7 +1063,8 @@ export function AppearanceSettingsPanel() {
                   value === "charcoal-slate" ||
                   value === "charcoal-graphite" ||
                   value === "charcoal-frost" ||
-                  value === "charcoal-ember"
+                  value === "charcoal-ember" ||
+                  value === "glass-aurora"
                 ) {
                   setSkin(value as AppSkin);
                 }
