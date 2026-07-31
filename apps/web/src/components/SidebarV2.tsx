@@ -518,7 +518,7 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
                 ? {
                     label: "Done",
                     icon: "done" as const,
-                    className: "text-sky-500 dark:text-sky-400",
+                    className: "text-emerald-700 dark:text-emerald-300",
                   }
                 : null;
 
@@ -969,10 +969,7 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
                           <CircleDashedIcon className="size-4 animate-electric-spin motion-reduce:animate-none" />
                         </span>
                       ) : topStatus.icon === "done" ? (
-                        <CircleCheckIcon
-                          aria-hidden
-                          className="size-4 shrink-0 text-sky-400 drop-shadow-[0_0_6px_rgb(56_189_248/0.55)]"
-                        />
+                        <CircleCheckIcon aria-hidden className="size-4 shrink-0" />
                       ) : topStatus.icon === "woke" ? (
                         <AlarmClockIcon aria-hidden className="size-4 shrink-0" />
                       ) : null}
