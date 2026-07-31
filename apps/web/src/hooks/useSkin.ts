@@ -5,20 +5,22 @@ import { useCallback, useEffect, useSyncExternalStore } from "react";
  * Soft-fork appearance skins layered on light/dark.
  * Charcoal Soft is the default for night-friendly contrast.
  */
-export const AppSkin = Schema.Literals([
+const APP_SKIN_VALUES = [
   "default",
   "charcoal-soft",
   "charcoal-slate",
   "charcoal-graphite",
   "charcoal-frost",
   "charcoal-ember",
-]);
-export type AppSkin = typeof AppSkin.Type;
+] as const;
+
+export const AppSkin = Schema.Literals(APP_SKIN_VALUES);
+export type AppSkin = (typeof APP_SKIN_VALUES)[number];
 
 const STORAGE_KEY = "t3code:skin";
 const DEFAULT_SKIN: AppSkin = "charcoal-soft";
 
-const VALID_SKINS = new Set<string>(AppSkin.literals);
+const VALID_SKINS = new Set<string>(APP_SKIN_VALUES);
 
 const SKIN_OPTIONS: ReadonlyArray<{ value: AppSkin; label: string; description: string }> = [
   {
