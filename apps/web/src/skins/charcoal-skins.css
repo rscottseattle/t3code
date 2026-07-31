@@ -209,37 +209,129 @@ html.dark[data-skin="charcoal-ember"] {
   --chat-composer-outline: rgb(255 210 170 / 8%);
 }
 
-/* Sidebar layout panels: keep skins on charcoal, never pure black */
+/*
+ * Stock `.dark [data-sidebar-version]` paints pure black + bright white borders
+ * on the sidebar tree. Re-assert each skin’s palette with REAL values (no
+ * self-referential vars) so pane edges don’t fall back to stark white.
+ */
 html.dark[data-skin="charcoal-soft"] [data-sidebar-version="v1"],
-html.dark[data-skin="charcoal-soft"] [data-sidebar-version="v2"],
+html.dark[data-skin="charcoal-soft"] [data-sidebar-version="v2"] {
+  --background: #1b1c20;
+  --foreground: #f0f1f4;
+  --card: #1f2126;
+  --card-foreground: #f0f1f4;
+  --accent: #2c2e35;
+  --accent-foreground: #ffffff;
+  --muted: #2c2e35;
+  --muted-foreground: #a0a4ae;
+  --border: #25272c;
+  --input: #2c2e35;
+  --sidebar: #1f2126;
+  --sidebar-foreground: #f0f1f4;
+  --sidebar-muted-foreground: #a0a4ae;
+  --sidebar-control-surface: #2c2e35;
+  --sidebar-row-hover: color-mix(in srgb, #ffffff 6%, transparent);
+  --sidebar-row-active: color-mix(in srgb, #ffffff 8%, transparent);
+  --sidebar-row-selected: color-mix(in srgb, #ffffff 7%, transparent);
+  --sidebar-border: #25272c;
+  --sidebar-stage-fade: #1f2126;
+  background-color: #1f2126;
+}
+
 html.dark[data-skin="charcoal-slate"] [data-sidebar-version="v1"],
-html.dark[data-skin="charcoal-slate"] [data-sidebar-version="v2"],
+html.dark[data-skin="charcoal-slate"] [data-sidebar-version="v2"] {
+  --background: #181b22;
+  --foreground: #eef1f7;
+  --card: #1a1e27;
+  --card-foreground: #eef1f7;
+  --accent: #272d3a;
+  --accent-foreground: #ffffff;
+  --muted: #272d3a;
+  --muted-foreground: #97a0b2;
+  --border: #222733;
+  --input: #272d3a;
+  --sidebar: #1a1e27;
+  --sidebar-foreground: #eef1f7;
+  --sidebar-muted-foreground: #97a0b2;
+  --sidebar-control-surface: #272d3a;
+  --sidebar-row-hover: color-mix(in srgb, #9db4ff 9%, transparent);
+  --sidebar-row-active: color-mix(in srgb, #9db4ff 12%, transparent);
+  --sidebar-row-selected: color-mix(in srgb, #9db4ff 10%, transparent);
+  --sidebar-border: #222733;
+  --sidebar-stage-fade: #1a1e27;
+  background-color: #1a1e27;
+}
+
 html.dark[data-skin="charcoal-graphite"] [data-sidebar-version="v1"],
-html.dark[data-skin="charcoal-graphite"] [data-sidebar-version="v2"],
+html.dark[data-skin="charcoal-graphite"] [data-sidebar-version="v2"] {
+  --background: #1a1a1c;
+  --foreground: #f5f5f7;
+  --card: #1d1d20;
+  --card-foreground: #f5f5f7;
+  --accent: #2c2c31;
+  --accent-foreground: #ffffff;
+  --muted: #2c2c31;
+  --muted-foreground: #a8a8b0;
+  --border: #242428;
+  --input: #2c2c31;
+  --sidebar: #1d1d20;
+  --sidebar-foreground: #f5f5f7;
+  --sidebar-muted-foreground: #a8a8b0;
+  --sidebar-control-surface: #2c2c31;
+  --sidebar-row-hover: color-mix(in srgb, #ffffff 7%, transparent);
+  --sidebar-row-active: color-mix(in srgb, #ffffff 10%, transparent);
+  --sidebar-row-selected: color-mix(in srgb, #ffffff 8%, transparent);
+  --sidebar-border: #242428;
+  --sidebar-stage-fade: #1d1d20;
+  background-color: #1d1d20;
+}
+
 html.dark[data-skin="charcoal-frost"] [data-sidebar-version="v1"],
-html.dark[data-skin="charcoal-frost"] [data-sidebar-version="v2"],
+html.dark[data-skin="charcoal-frost"] [data-sidebar-version="v2"] {
+  --background: #17191e;
+  --foreground: #f2f4f8;
+  --card: #1c1f27;
+  --card-foreground: #f2f4f8;
+  --accent: #2a2f3a;
+  --accent-foreground: #ffffff;
+  --muted: #2a2f3a;
+  --muted-foreground: #9aa3b5;
+  --border: #21252e;
+  --input: #2a2f3a;
+  --sidebar: #1c1f27;
+  --sidebar-foreground: #f2f4f8;
+  --sidebar-muted-foreground: #9aa3b5;
+  --sidebar-control-surface: #2a2f3a;
+  --sidebar-row-hover: color-mix(in srgb, #ffffff 6%, transparent);
+  --sidebar-row-active: color-mix(in srgb, #c8d4ff 10%, transparent);
+  --sidebar-row-selected: color-mix(in srgb, #c8d4ff 8%, transparent);
+  --sidebar-border: #21252e;
+  --sidebar-stage-fade: #1c1f27;
+  background-color: #1c1f27;
+}
+
 html.dark[data-skin="charcoal-ember"] [data-sidebar-version="v1"],
 html.dark[data-skin="charcoal-ember"] [data-sidebar-version="v2"] {
-  --background: var(--background);
-  --foreground: var(--foreground);
-  --card: var(--sidebar);
-  --card-foreground: var(--sidebar-foreground);
-  --accent: var(--sidebar-control-surface);
-  --accent-foreground: var(--accent-foreground);
-  --muted: var(--muted);
-  --muted-foreground: var(--sidebar-muted-foreground);
-  --border: var(--sidebar-border);
-  --input: var(--input);
-  --sidebar: var(--sidebar);
-  --sidebar-foreground: var(--sidebar-foreground);
-  --sidebar-muted-foreground: var(--sidebar-muted-foreground);
-  --sidebar-control-surface: var(--sidebar-control-surface);
-  --sidebar-row-hover: var(--sidebar-row-hover);
-  --sidebar-row-active: var(--sidebar-row-active);
-  --sidebar-row-selected: var(--sidebar-row-selected);
-  --sidebar-border: var(--sidebar-border);
-  --sidebar-stage-fade: var(--sidebar-stage-fade);
-  background-color: var(--sidebar);
+  --background: #1c1917;
+  --foreground: #f5f0eb;
+  --card: #201c19;
+  --card-foreground: #f5f0eb;
+  --accent: #322d28;
+  --accent-foreground: #fff8f2;
+  --muted: #322d28;
+  --muted-foreground: #a89f96;
+  --border: #282320;
+  --input: #322d28;
+  --sidebar: #201c19;
+  --sidebar-foreground: #f5f0eb;
+  --sidebar-muted-foreground: #a89f96;
+  --sidebar-control-surface: #322d28;
+  --sidebar-row-hover: color-mix(in srgb, #ffd0a8 7%, transparent);
+  --sidebar-row-active: color-mix(in srgb, #ffd0a8 11%, transparent);
+  --sidebar-row-selected: color-mix(in srgb, #ffd0a8 9%, transparent);
+  --sidebar-border: #282320;
+  --sidebar-stage-fade: #201c19;
+  background-color: #201c19;
 }
 
 /* Stage art: quieter so it sits in charcoal chrome */
@@ -282,34 +374,58 @@ html.dark[data-skin^="charcoal-"] .chat-composer-glass-shell::before {
 }
 
 /*
- * Pane dividers: stock uses a full-height border + a 2px rail hover.
- * Keep hairlines almost invisible; only a faint hint on hover.
+ * Pane dividers — single 1px hairline, only slightly off the surface color.
+ * Stock draws border-r on the sidebar container AND AppSidebarLayout; the rail
+ * also paints a 2px ::after. Collapse to one subtle line on all charcoal skins.
  */
-html.dark[data-skin^="charcoal-"] [data-app-sidebar] {
-  border-right-width: 1px;
-  border-right-color: color-mix(in srgb, var(--foreground) 6%, transparent);
+html.dark[data-skin^="charcoal-"] {
+  --pane-divider: color-mix(in srgb, var(--background) 88%, #ffffff);
 }
 
-html.dark[data-skin^="charcoal-"] [data-slot="sidebar-rail"]::after {
+html.dark[data-skin^="charcoal-"] [data-slot="sidebar-container"],
+html.dark[data-skin^="charcoal-"] [data-app-sidebar] {
+  border-right-width: 0 !important;
+  border-right-style: none !important;
+  border-right-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* One real 1px divider on the fixed sidebar edge */
+html.dark[data-skin^="charcoal-"] [data-slot="sidebar-container"]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
   width: 1px;
-  background-color: transparent;
+  pointer-events: none;
+  background: var(--pane-divider);
+  z-index: 30;
+}
+
+/* Kill the stock 2px resize-rail paint */
+html.dark[data-skin^="charcoal-"] [data-slot="sidebar-rail"]::after {
+  width: 1px !important;
+  background-color: transparent !important;
 }
 
 html.dark[data-skin^="charcoal-"] [data-slot="sidebar-rail"]:hover::after,
 html.dark[data-skin^="charcoal-"] [data-slot="sidebar-rail"]:active::after {
-  background-color: color-mix(in srgb, var(--foreground) 12%, transparent);
+  background-color: color-mix(in srgb, var(--background) 75%, #ffffff) !important;
 }
 
-/* Right-panel / preview / plan / diff left edges */
-html.dark[data-skin^="charcoal-"] [class*="border-l"][class*="border-border"] {
-  border-left-color: color-mix(in srgb, var(--foreground) 6%, transparent);
+/* Right-side panels (preview / plan / diff / file browser) */
+html.dark[data-skin^="charcoal-"] [class*="border-l"] {
+  border-left-width: 1px !important;
+  border-left-color: var(--pane-divider) !important;
 }
 
 /* Resize handle line: invisible until hover */
 html.dark[data-skin^="charcoal-"] [role="separator"][aria-orientation="vertical"] > span {
-  background-color: transparent;
+  width: 1px !important;
+  background-color: transparent !important;
 }
 
 html.dark[data-skin^="charcoal-"] [role="separator"][aria-orientation="vertical"]:hover > span {
-  background-color: color-mix(in srgb, var(--foreground) 14%, transparent);
+  background-color: color-mix(in srgb, var(--background) 75%, #ffffff) !important;
 }
