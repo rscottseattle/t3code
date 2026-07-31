@@ -235,3 +235,42 @@ html.dark[data-skin="glass-aurora"] .drag-region {
   -webkit-backdrop-filter: blur(18px) saturate(1.15);
   backdrop-filter: blur(18px) saturate(1.15);
 }
+
+/*
+ * Composer footer controls (model / effort / access / Build):
+ * stock uses muted-foreground/70 + font-medium — reads dull and heavy on glass.
+ */
+html.dark[data-skin="glass-aurora"] .chat-composer-glass-shell {
+  --muted-foreground: #c8d4ec;
+}
+
+html.dark[data-skin="glass-aurora"] .chat-composer-glass-shell button,
+html.dark[data-skin="glass-aurora"] .chat-composer-glass-shell [data-slot="select-trigger"],
+html.dark[data-skin="glass-aurora"] .chat-composer-glass-shell [data-slot="select-value"] {
+  color: rgb(236 242 255 / 0.92) !important;
+  font-weight: 450 !important;
+}
+
+html.dark[data-skin="glass-aurora"] .chat-composer-glass-shell .font-medium {
+  font-weight: 450 !important;
+}
+
+html.dark[data-skin="glass-aurora"] .chat-composer-glass-shell .text-muted-foreground,
+html.dark[data-skin="glass-aurora"] .chat-composer-glass-shell .text-muted-foreground\/70 {
+  color: rgb(210 222 245 / 0.88) !important;
+}
+
+html.dark[data-skin="glass-aurora"] .chat-composer-glass-shell textarea::placeholder,
+html.dark[data-skin="glass-aurora"] .chat-composer-glass-shell [data-placeholder] {
+  color: rgb(190 205 235 / 0.72) !important;
+  font-weight: 400 !important;
+}
+
+html.dark[data-skin="glass-aurora"] .chat-composer-glass-shell svg {
+  opacity: 0.9;
+}
+
+html.dark[data-skin="glass-aurora"] .chat-composer-glass-shell [data-composer-control-chevron] {
+  opacity: 0.85 !important;
+  color: rgb(220 230 250 / 0.9) !important;
+}

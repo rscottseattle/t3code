@@ -356,6 +356,42 @@ html.dark[data-skin="charcoal-frost"] .stage-blueprint {
   --stage-bp-mid: #4568a0;
   --stage-bp-bottom: #243a62;
 }
+
+/* Composer controls: pop a bit more, slightly lighter than font-medium */
+html.dark[data-skin="charcoal-frost"] .chat-composer-glass-shell {
+  --muted-foreground: #c4cbd8;
+}
+
+html.dark[data-skin="charcoal-frost"] .chat-composer-glass-shell button,
+html.dark[data-skin="charcoal-frost"] .chat-composer-glass-shell [data-slot="select-trigger"],
+html.dark[data-skin="charcoal-frost"] .chat-composer-glass-shell [data-slot="select-value"] {
+  color: rgb(245 247 252 / 0.92) !important;
+  font-weight: 450 !important;
+}
+
+html.dark[data-skin="charcoal-frost"] .chat-composer-glass-shell .font-medium {
+  font-weight: 450 !important;
+}
+
+html.dark[data-skin="charcoal-frost"] .chat-composer-glass-shell .text-muted-foreground,
+html.dark[data-skin="charcoal-frost"] .chat-composer-glass-shell .text-muted-foreground\/70 {
+  color: rgb(220 226 238 / 0.88) !important;
+}
+
+html.dark[data-skin="charcoal-frost"] .chat-composer-glass-shell textarea::placeholder,
+html.dark[data-skin="charcoal-frost"] .chat-composer-glass-shell [data-placeholder] {
+  color: rgb(200 208 222 / 0.72) !important;
+  font-weight: 400 !important;
+}
+
+html.dark[data-skin="charcoal-frost"] .chat-composer-glass-shell svg {
+  opacity: 0.9;
+}
+
+html.dark[data-skin="charcoal-frost"] .chat-composer-glass-shell [data-composer-control-chevron] {
+  opacity: 0.85 !important;
+  color: rgb(235 238 246 / 0.9) !important;
+}
 html.dark[data-skin="charcoal-ember"] .stage-blueprint {
   --stage-bp-top: #c48a58;
   --stage-bp-mid: #8a5a32;
