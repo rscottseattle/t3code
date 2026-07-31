@@ -12,10 +12,6 @@ import "@xterm/xterm/css/xterm.css";
 import "./index.css";
 import "./skins/charcoal-soft.css";
 import { bootstrapSkin } from "./hooks/useSkin";
-
-// Apply fork skin before first paint so dark chrome isn't pure black, then flash.
-bootstrapSkin();
-
 import { isElectron } from "./env";
 import { ManagedRelayAuthProvider } from "./cloud/managedAuth";
 import { hasCloudPublicConfig } from "./cloud/publicConfig";
@@ -25,6 +21,9 @@ import {
   syncDocumentWindowControlsOverlayClass,
 } from "./lib/windowControlsOverlay";
 import { AppRoot } from "./AppRoot";
+
+// Apply fork skin early so dark chrome isn't pure black on first paint.
+bootstrapSkin();
 
 // Electron loads the app from a file-backed shell, so hash history avoids path resolution issues.
 const history = isElectron ? createHashHistory() : createBrowserHistory();
