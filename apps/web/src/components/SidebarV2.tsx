@@ -480,16 +480,15 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
   const isInFlight = status === "working" || status === "approval" || status === "input";
   const shouldRecede =
     (status === "ready" || isInFlight) && !isUnread && !isWoke && !props.isActive && !isSelected;
-  // Status hues follow the system-wide convention set by sidebar v1 and the
-  // mobile Live Activity/widgets (amber approval, indigo input, sky working)
-  // so a thread reads the same color everywhere it surfaces.
+  // Status hues: working = electric violet (spin + glow); done = electric blue.
+  // Approval / input / failed keep the shared amber / indigo / red convention.
   const topStatus =
     status === "working"
       ? {
           label: "Working",
           icon: "working" as const,
           className:
-            "animate-sidebar-working-text text-sky-600 motion-reduce:animate-none dark:text-sky-400",
+            "animate-sidebar-working-text text-violet-400 motion-reduce:animate-none dark:text-violet-300",
         }
       : status === "approval"
         ? {
@@ -519,7 +518,7 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
                 ? {
                     label: "Done",
                     icon: "done" as const,
-                    className: "text-emerald-700 dark:text-emerald-300",
+                    className: "text-sky-500 dark:text-sky-400",
                   }
                 : null;
 
@@ -963,9 +962,17 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
                       )}
                     >
                       {topStatus.icon === "working" ? (
-                        <CircleDashedIcon aria-hidden className="size-4 shrink-0" />
+                        <span
+                          aria-hidden
+                          className="inline-flex size-4 shrink-0 items-center justify-center animate-electric-glow motion-reduce:animate-none"
+                        >
+                          <CircleDashedIcon className="size-4 animate-electric-spin motion-reduce:animate-none" />
+                        </span>
                       ) : topStatus.icon === "done" ? (
-                        <CircleCheckIcon aria-hidden className="size-4 shrink-0" />
+                        <CircleCheckIcon
+                          aria-hidden
+                          className="size-4 shrink-0 text-sky-400 drop-shadow-[0_0_6px_rgb(56_189_248/0.55)]"
+                        />
                       ) : topStatus.icon === "woke" ? (
                         <AlarmClockIcon aria-hidden className="size-4 shrink-0" />
                       ) : null}

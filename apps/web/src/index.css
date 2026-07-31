@@ -126,6 +126,9 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --animate-status-pulse: status-pulse 2s infinite;
   --animate-status-ping: status-ping 2s infinite;
   --animate-sidebar-working-text: sidebar-working-text 3.4s infinite;
+  /* Soft-fork: electric working indicator (spin + violet glow) */
+  --animate-electric-spin: electric-spin 0.9s linear infinite;
+  --animate-electric-glow: electric-glow 1.4s ease-in-out infinite;
   /* Default UI font is system (Paseo-like). Override via data-ui-font. */
   --font-sans:
     system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -221,6 +224,47 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
     100% {
       opacity: 1;
     }
+  }
+  @keyframes electric-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  /* Violet ↔ near-black flicker with a soft electric glow */
+  @keyframes electric-glow {
+    0%,
+    100% {
+      color: #c4b5fd;
+      filter: drop-shadow(0 0 2px rgb(167 139 250 / 55%)) drop-shadow(0 0 6px rgb(91 33 182 / 35%));
+      opacity: 1;
+    }
+    40% {
+      color: #e9d5ff;
+      filter: drop-shadow(0 0 4px rgb(216 180 254 / 75%))
+        drop-shadow(0 0 10px rgb(124 58 237 / 50%));
+      opacity: 1;
+    }
+    70% {
+      color: #6b21a8;
+      filter: drop-shadow(0 0 1px rgb(30 10 50 / 80%));
+      opacity: 0.88;
+    }
+  }
+}
+
+/* Utility classes used by sidebar working/done status (all skins) */
+@utility animate-electric-spin {
+  animation: var(--animate-electric-spin);
+}
+
+@utility animate-electric-glow {
+  animation: var(--animate-electric-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-electric-spin,
+  .animate-electric-glow {
+    animation: none !important;
   }
 }
 
