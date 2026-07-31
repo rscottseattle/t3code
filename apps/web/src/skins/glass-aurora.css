@@ -8,17 +8,18 @@ html.dark[data-skin="glass-aurora"] {
   --background: rgb(6 10 28 / 58%);
   --app-chrome-background: transparent;
   --surface-raised: rgb(20 36 90 / 28%);
-  --foreground: #e8eefc;
+  /* Bright whites — gray body text looked soft/blurry on glass */
+  --foreground: #f7f9ff;
   --card: rgb(12 20 48 / 52%);
-  --card-foreground: #eef2fc;
+  --card-foreground: #fafbff;
   --popover: rgb(8 14 36 / 80%);
-  --popover-foreground: #eef2fc;
+  --popover-foreground: #fafbff;
   --primary: oklch(0.66 0.12 260);
   --primary-foreground: #040814;
   --secondary: rgb(50 80 160 / 18%);
-  --secondary-foreground: #e8eefc;
+  --secondary-foreground: #f7f9ff;
   --muted: rgb(16 28 60 / 48%);
-  --muted-foreground: #8e9bb8;
+  --muted-foreground: #b4c0d8;
   --accent: rgb(50 90 180 / 22%);
   --accent-foreground: #ffffff;
   --destructive: color-mix(in srgb, var(--color-red-400) 90%, white);
@@ -26,8 +27,8 @@ html.dark[data-skin="glass-aurora"] {
   --input: rgb(100 140 220 / 14%);
   --ring: oklch(0.66 0.11 255);
   --sidebar: rgb(4 8 22 / 68%);
-  --sidebar-foreground: #e8eefc;
-  --sidebar-muted-foreground: #8490ad;
+  --sidebar-foreground: #f7f9ff;
+  --sidebar-muted-foreground: #a8b4cc;
   --sidebar-control-surface: rgb(16 28 64 / 52%);
   --sidebar-row-hover: rgb(60 100 200 / 12%);
   --sidebar-row-active: rgb(60 100 200 / 18%);
@@ -101,18 +102,18 @@ html.dark[data-skin="glass-aurora"] main[data-slot="sidebar-inset"] {
 html.dark[data-skin="glass-aurora"] [data-sidebar-version="v1"],
 html.dark[data-skin="glass-aurora"] [data-sidebar-version="v2"] {
   --background: rgb(6 10 28 / 58%);
-  --foreground: #e8eefc;
+  --foreground: #f7f9ff;
   --card: rgb(12 20 48 / 52%);
-  --card-foreground: #eef2fc;
+  --card-foreground: #fafbff;
   --accent: rgb(50 90 180 / 22%);
   --accent-foreground: #ffffff;
   --muted: rgb(16 28 60 / 48%);
-  --muted-foreground: #8e9bb8;
+  --muted-foreground: #b4c0d8;
   --border: rgb(100 140 220 / 12%);
   --input: rgb(100 140 220 / 14%);
   --sidebar: rgb(4 8 22 / 68%);
-  --sidebar-foreground: #e8eefc;
-  --sidebar-muted-foreground: #8490ad;
+  --sidebar-foreground: #f7f9ff;
+  --sidebar-muted-foreground: #a8b4cc;
   --sidebar-control-surface: rgb(16 28 64 / 52%);
   --sidebar-row-hover: rgb(60 100 200 / 12%);
   --sidebar-row-active: rgb(60 100 200 / 18%);

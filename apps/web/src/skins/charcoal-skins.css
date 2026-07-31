@@ -136,25 +136,26 @@ html.dark[data-skin="charcoal-frost"] {
   --background: #17191e;
   --app-chrome-background: #17191e;
   --surface-raised: color-mix(in srgb, #2f3340 70%, transparent);
-  --foreground: #f2f4f8;
+  /* Brighter body text — less gray = less “blurry” on frosted glass */
+  --foreground: #f8f9fc;
   --card: color-mix(in srgb, #252933 88%, transparent);
-  --card-foreground: #f2f4f8;
+  --card-foreground: #fafbfd;
   --popover: color-mix(in srgb, #2a2f3a 92%, transparent);
-  --popover-foreground: #f2f4f8;
+  --popover-foreground: #fafbfd;
   --primary: oklch(0.68 0.1 230);
   --primary-foreground: #ffffff;
   --secondary: color-mix(in srgb, #c8d4ff 7%, transparent);
-  --secondary-foreground: #f2f4f8;
+  --secondary-foreground: #f8f9fc;
   --muted: color-mix(in srgb, #343a48 92%, transparent);
-  --muted-foreground: #9aa3b5;
+  --muted-foreground: #b0b7c6;
   --accent: color-mix(in srgb, #c8d4ff 9%, transparent);
   --accent-foreground: #ffffff;
   --border: color-mix(in srgb, #ffffff 3.5%, transparent);
   --input: color-mix(in srgb, #ffffff 6%, transparent);
   --ring: oklch(0.68 0.09 230);
   --sidebar: color-mix(in srgb, #1c1f27 94%, transparent);
-  --sidebar-foreground: #f2f4f8;
-  --sidebar-muted-foreground: #9aa3b5;
+  --sidebar-foreground: #f8f9fc;
+  --sidebar-muted-foreground: #a8b0c0;
   --sidebar-control-surface: color-mix(in srgb, #343a48 90%, transparent);
   --sidebar-row-hover: color-mix(in srgb, #ffffff 6%, transparent);
   --sidebar-row-active: color-mix(in srgb, #c8d4ff 10%, transparent);
@@ -289,18 +290,18 @@ html.dark[data-skin="charcoal-graphite"] [data-sidebar-version="v2"] {
 html.dark[data-skin="charcoal-frost"] [data-sidebar-version="v1"],
 html.dark[data-skin="charcoal-frost"] [data-sidebar-version="v2"] {
   --background: #17191e;
-  --foreground: #f2f4f8;
+  --foreground: #f8f9fc;
   --card: #1c1f27;
-  --card-foreground: #f2f4f8;
+  --card-foreground: #fafbfd;
   --accent: #2a2f3a;
   --accent-foreground: #ffffff;
   --muted: #2a2f3a;
-  --muted-foreground: #9aa3b5;
+  --muted-foreground: #b0b7c6;
   --border: #21252e;
   --input: #2a2f3a;
   --sidebar: #1c1f27;
-  --sidebar-foreground: #f2f4f8;
-  --sidebar-muted-foreground: #9aa3b5;
+  --sidebar-foreground: #f8f9fc;
+  --sidebar-muted-foreground: #a8b0c0;
   --sidebar-control-surface: #2a2f3a;
   --sidebar-row-hover: color-mix(in srgb, #ffffff 6%, transparent);
   --sidebar-row-active: color-mix(in srgb, #c8d4ff 10%, transparent);
