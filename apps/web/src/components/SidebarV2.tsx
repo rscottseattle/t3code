@@ -23,8 +23,8 @@ import {
   CircleDashedIcon,
   ClockIcon,
   CopyIcon,
-  FolderIcon,
   FolderPlusIcon,
+  LayersIcon,
   GitBranchIcon,
   EllipsisIcon,
   MessageSquareIcon,
@@ -273,7 +273,8 @@ function SidebarV2ThreadTooltip({
               <ProjectFavicon
                 environmentId={thread.environmentId}
                 cwd={projectCwd ?? ""}
-                className="size-3 shrink-0 stroke-muted-foreground"
+                className="size-3 shrink-0"
+                fallbackLabel={projectTitle}
               />
               <div className="min-w-0 truncate text-foreground/75">{projectTitle}</div>
             </div>
@@ -815,7 +816,8 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
                 environmentId={thread.environmentId}
                 cwd={props.projectCwd ?? ""}
                 className="size-4"
-                fallbackIcon={MessageSquareIcon}
+                fallbackLabel={props.projectTitle ?? thread.title}
+                fallbackIcon={props.projectTitle ? undefined : MessageSquareIcon}
               />
             </span>
             {title}
@@ -924,6 +926,8 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
                 environmentId={thread.environmentId}
                 cwd={props.projectCwd ?? ""}
                 className="size-4 shrink-0"
+                fallbackLabel={props.projectTitle ?? undefined}
+                hideFallback={!props.projectTitle}
               />
               {props.projectTitle ? (
                 <span
@@ -2476,9 +2480,10 @@ export default function SidebarV2() {
                         environmentId={scopedProjectGroup.environmentId}
                         cwd={scopedProjectGroup.workspaceRoot}
                         className="size-4 shrink-0"
+                        fallbackLabel={scopedProjectGroup.displayName}
                       />
                     ) : (
-                      <FolderIcon className="size-4 shrink-0" />
+                      <LayersIcon className="size-4 shrink-0 opacity-70" />
                     )}
                     <span className="min-w-0 flex-1 truncate">
                       {scopedProjectGroup?.displayName ?? "All projects"}
@@ -2497,7 +2502,7 @@ export default function SidebarV2() {
                         closeOnClick
                         className="h-8 min-h-8 px-1 py-0 text-sm font-medium [&>span:last-child]:flex [&>span:last-child]:min-w-0 [&>span:last-child]:items-center [&>span:last-child]:gap-2"
                       >
-                        <FolderIcon className="size-4 shrink-0" />
+                        <LayersIcon className="size-4 shrink-0 opacity-70" />
                         <span className="min-w-0 truncate text-sm">All projects</span>
                       </MenuRadioItem>
                       {projectGroups.map((project) => {
@@ -2513,6 +2518,7 @@ export default function SidebarV2() {
                               environmentId={project.environmentId}
                               cwd={project.workspaceRoot}
                               className="size-4 shrink-0"
+                              fallbackLabel={project.displayName}
                             />
                             <span className="min-w-0 truncate text-sm">{project.displayName}</span>
                             <button
@@ -2768,7 +2774,6 @@ export default function SidebarV2() {
               {projectActionsTarget?.memberProjects.map((member) => (
                 <div key={member.physicalProjectKey} className="flex min-w-0 items-center gap-3">
                   <span className="flex min-w-0 items-center gap-1">
-                    <FolderIcon className="size-3.5 shrink-0 opacity-60" />
                     <span className="min-w-0 truncate font-mono">{member.workspaceRoot}</span>
                     <Button
                       size="icon-xs"

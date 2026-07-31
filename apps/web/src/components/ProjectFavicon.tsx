@@ -3,11 +3,11 @@ import {
   getProjectFaviconCacheKey,
   isProjectFaviconFallbackUrl,
 } from "@t3tools/shared/projectFavicon";
-import { FolderIcon } from "lucide-react";
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { useState } from "react";
 import { useAssetUrl } from "../assets/assetUrls";
 import { cn } from "~/lib/utils";
+import { ProjectMonogram } from "./ProjectMonogram";
 
 const loadedProjectFaviconSrcs = new Map<string, string>();
 
@@ -15,16 +15,27 @@ export function ProjectFavicon(input: {
   environmentId: EnvironmentId;
   cwd: string;
   className?: string | undefined;
-  fallbackIcon?: ComponentType<{ className?: string }>;
+  /**
+   * Optional icon component when no project favicon exists.
+   * Prefer `fallback` / `fallbackLabel` for inbox rows — folders imply nesting.
+   */
+  fallbackIcon?: ComponentType<{ className?: string }> | undefined;
+  /** Custom React fallback (e.g. monogram). Takes precedence over fallbackIcon. */
+  fallback?: ReactNode;
+  /** When set and no custom fallback, render a monogram from this label. */
+  fallbackLabel?: string | undefined;
+  /** When true, render nothing if no real favicon is available. */
+  hideFallback?: boolean | undefined;
 }) {
   const src = useAssetUrl(input.environmentId, {
     _tag: "project-favicon",
     cwd: input.cwd,
   });
-  const FallbackIcon = input.fallbackIcon ?? FolderIcon;
+
+  const fallbackNode = resolveProjectFaviconFallback(input);
 
   if (!src || isProjectFaviconFallbackUrl(src)) {
-    return <ProjectFaviconFallback className={input.className} icon={FallbackIcon} />;
+    return fallbackNode;
   }
 
   const cacheKey = getProjectFaviconCacheKey(input.environmentId, input.cwd, src);
@@ -35,31 +46,41 @@ export function ProjectFavicon(input: {
       cacheKey={cacheKey}
       src={src}
       className={input.className}
-      fallbackIcon={FallbackIcon}
+      fallback={fallbackNode}
     />
   );
 }
 
-function ProjectFaviconFallback({
-  className,
-  icon: Icon,
-}: {
-  readonly className?: string | undefined;
-  readonly icon: ComponentType<{ className?: string }>;
-}) {
-  return <Icon className={cn("size-3.5 shrink-0 text-muted-foreground/50", className)} />;
+function resolveProjectFaviconFallback(input: {
+  className?: string | undefined;
+  fallbackIcon?: ComponentType<{ className?: string }> | undefined;
+  fallback?: ReactNode;
+  fallbackLabel?: string | undefined;
+  hideFallback?: boolean | undefined;
+}): ReactNode {
+  if (input.hideFallback) return null;
+  if (input.fallback !== undefined) return input.fallback;
+  if (input.fallbackIcon) {
+    const Icon = input.fallbackIcon;
+    return <Icon className={cn("size-3.5 shrink-0 text-muted-foreground/50", input.className)} />;
+  }
+  if (input.fallbackLabel) {
+    return <ProjectMonogram label={input.fallbackLabel} className={input.className} />;
+  }
+  // Default: monogram-style dot — never a folder (folders imply hierarchy).
+  return <ProjectMonogram label="·" className={input.className} />;
 }
 
 function ProjectFaviconImage({
   cacheKey,
   src,
   className,
-  fallbackIcon: FallbackIcon,
+  fallback,
 }: {
   readonly cacheKey: string;
   readonly src: string;
   readonly className?: string | undefined;
-  readonly fallbackIcon: ComponentType<{ className?: string }>;
+  readonly fallback: ReactNode;
 }) {
   const [displayedSrc, setDisplayedSrc] = useState<string | null>(
     () => loadedProjectFaviconSrcs.get(cacheKey) ?? null,
@@ -74,9 +95,7 @@ function ProjectFaviconImage({
 
   return (
     <>
-      {displayedSrc === null ? (
-        <ProjectFaviconFallback className={className} icon={FallbackIcon} />
-      ) : null}
+      {displayedSrc === null ? fallback : null}
       {displayedSrc ? (
         <img
           src={displayedSrc}
