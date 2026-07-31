@@ -65,6 +65,7 @@ import { isElectron } from "../../env";
 import { buildHostedChannelSelectionUrl, type HostedAppChannel } from "../../hostedPairing";
 import { useTheme } from "../../hooks/useTheme";
 import { useSkin, type AppSkin } from "../../hooks/useSkin";
+import { useUiFont, type UiFont } from "../../hooks/useUiFont";
 import { usePrimarySettings, useUpdatePrimarySettings } from "../../hooks/useSettings";
 import { useThreadActions } from "../../hooks/useThreadActions";
 import { useDesktopUpdateState } from "../../state/desktopUpdate";
@@ -951,6 +952,7 @@ function BackgroundActivityAdvancedDialog({
 export function AppearanceSettingsPanel() {
   const { theme, setTheme } = useTheme();
   const { skin, setSkin, options: skinOptions } = useSkin();
+  const { uiFont, setUiFont, options: uiFontOptions } = useUiFont();
   const settings = usePrimarySettings();
   const updateSettings = useUpdatePrimarySettings();
   const environmentStageLabel = useEnvironmentStageLabel();
@@ -990,6 +992,47 @@ export function AppearanceSettingsPanel() {
               </SelectTrigger>
               <SelectPopup align="end" alignItemWithTrigger={false}>
                 {THEME_OPTIONS.map((option) => (
+                  <SelectItem hideIndicator key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectPopup>
+            </Select>
+          }
+        />
+
+        <SettingsRow
+          title="UI font"
+          description={
+            uiFontOptions.find((option) => option.value === uiFont)?.description ??
+            "Interface typeface for labels, chat, and settings."
+          }
+          resetAction={
+            uiFont !== "system" ? (
+              <SettingResetButton label="UI font" onClick={() => setUiFont("system")} />
+            ) : null
+          }
+          control={
+            <Select
+              value={uiFont}
+              onValueChange={(value) => {
+                if (
+                  value === "system" ||
+                  value === "geist" ||
+                  value === "inter" ||
+                  value === "dm-sans"
+                ) {
+                  setUiFont(value as UiFont);
+                }
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-48" aria-label="UI font">
+                <SelectValue>
+                  {uiFontOptions.find((option) => option.value === uiFont)?.label ?? "System"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectPopup align="end" alignItemWithTrigger={false}>
+                {uiFontOptions.map((option) => (
                   <SelectItem hideIndicator key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>

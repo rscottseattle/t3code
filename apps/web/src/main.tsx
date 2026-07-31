@@ -6,12 +6,15 @@ import { ClerkProvider as ElectronClerkProvider } from "@clerk/electron/react";
 import { createHashHistory, createBrowserHistory } from "@tanstack/react-router";
 
 import "@fontsource-variable/dm-sans/index.css";
+import "@fontsource-variable/geist/index.css";
+import "@fontsource-variable/inter/index.css";
 import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
 import "@xterm/xterm/css/xterm.css";
 import "./index.css";
 import "./skins/charcoal-skins.css";
 import { bootstrapSkin } from "./hooks/useSkin";
+import { bootstrapUiFont } from "./hooks/useUiFont";
 import { isElectron } from "./env";
 import { ManagedRelayAuthProvider } from "./cloud/managedAuth";
 import { hasCloudPublicConfig } from "./cloud/publicConfig";
@@ -22,8 +25,9 @@ import {
 } from "./lib/windowControlsOverlay";
 import { AppRoot } from "./AppRoot";
 
-// Apply fork skin early so dark chrome isn't pure black on first paint.
+// Apply fork appearance before first paint.
 bootstrapSkin();
+bootstrapUiFont();
 
 // Electron loads the app from a file-backed shell, so hash history avoids path resolution issues.
 const history = isElectron ? createHashHistory() : createBrowserHistory();
