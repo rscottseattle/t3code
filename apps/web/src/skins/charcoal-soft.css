@@ -1,0 +1,96 @@
+/**
+ * Charcoal Soft — fork skin for nighttime comfort.
+ *
+ * Stock dark leans pure black (#000) with near-white text.
+ * This palette stays charcoal / dark gray, softens body text, and
+ * slightly increases frosted glass without going full neon.
+ *
+ * Active when: html.dark[data-skin="charcoal-soft"]
+ */
+
+html.dark[data-skin="charcoal-soft"] {
+  /* Surfaces: graphite, not void */
+  --background: #1a1b1f;
+  --app-chrome-background: #1a1b1f;
+  --surface-raised: color-mix(in srgb, #2a2c32 88%, transparent);
+  --foreground: #c4c7cf;
+  --card: #22242a;
+  --card-foreground: #d0d3da;
+  --popover: #26282f;
+  --popover-foreground: #d0d3da;
+  --primary: oklch(0.62 0.14 264);
+  --primary-foreground: #f0f2f7;
+  --secondary: color-mix(in srgb, #ffffff 5.5%, transparent);
+  --secondary-foreground: #d0d3da;
+  --muted: #2a2c33;
+  --muted-foreground: #8b909c;
+  --accent: color-mix(in srgb, #ffffff 6%, transparent);
+  --accent-foreground: #e2e4ea;
+  --border: color-mix(in srgb, #ffffff 8%, transparent);
+  --input: color-mix(in srgb, #ffffff 10%, transparent);
+  --ring: oklch(0.62 0.12 264);
+
+  /* Sidebar matches chrome — no pure black island */
+  --sidebar: #1e1f24;
+  --sidebar-foreground: #c4c7cf;
+  --sidebar-muted-foreground: #8b909c;
+  --sidebar-control-surface: #2a2c33;
+  --sidebar-row-hover: color-mix(in srgb, #ffffff 5%, transparent);
+  --sidebar-row-active: color-mix(in srgb, #ffffff 7.5%, transparent);
+  --sidebar-row-selected: color-mix(in srgb, #ffffff 6%, transparent);
+  --sidebar-border: color-mix(in srgb, #ffffff 7%, transparent);
+  --sidebar-stage-fade: #1e1f24;
+
+  /* Subtle frost — stronger blur, a bit more translucency feel */
+  --glass-blur: 18px;
+  --glass-opacity: 72%;
+  --glass-saturation: 1.06;
+
+  /* Softer scroll thumbs on charcoal */
+  --app-scrollbar-thumb: rgb(255 255 255 / 10%);
+  --app-scrollbar-thumb-hover: rgb(255 255 255 / 15%);
+}
+
+/* Sidebar v1/v2 override stock pure-black dark tokens */
+html.dark[data-skin="charcoal-soft"] [data-sidebar-version="v1"],
+html.dark[data-skin="charcoal-soft"] [data-sidebar-version="v2"] {
+  --background: #1a1b1f;
+  --foreground: #c4c7cf;
+  --card: #1e1f24;
+  --card-foreground: #d0d3da;
+  --accent: #2a2c33;
+  --accent-foreground: #e2e4ea;
+  --muted: #25272d;
+  --muted-foreground: #8b909c;
+  --border: color-mix(in srgb, #ffffff 8%, transparent);
+  --input: color-mix(in srgb, #ffffff 11%, transparent);
+  --sidebar: #1e1f24;
+  --sidebar-foreground: #c4c7cf;
+  --sidebar-muted-foreground: #8b909c;
+  --sidebar-control-surface: #2a2c33;
+  --sidebar-row-hover: color-mix(in srgb, #ffffff 5%, transparent);
+  --sidebar-row-active: color-mix(in srgb, #ffffff 7.5%, transparent);
+  --sidebar-row-selected: color-mix(in srgb, #ffffff 6%, transparent);
+  --sidebar-border: color-mix(in srgb, #ffffff 7%, transparent);
+  --sidebar-stage-fade: #1e1f24;
+  background-color: var(--sidebar);
+}
+
+/* Quiet stage-channel art so it doesn't punch against charcoal */
+html.dark[data-skin="charcoal-soft"] .stage-blueprint {
+  --stage-bp-top: #4a6fa8;
+  --stage-bp-mid: #2f4d7a;
+  --stage-bp-bottom: #1a2a45;
+}
+
+/* Composer glass: soft edge, not hard chrome */
+html.dark[data-skin="charcoal-soft"] .chat-composer-glass-shell {
+  --chat-composer-glass-surface: #25272e;
+  --chat-composer-outline: rgb(255 255 255 / 6%);
+}
+
+html.dark[data-skin="charcoal-soft"] .chat-composer-glass-shell::before {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 6%),
+    0 0 0 1px rgb(0 0 0 / 25%);
+}

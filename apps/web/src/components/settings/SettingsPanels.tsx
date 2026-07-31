@@ -64,6 +64,7 @@ import {
 import { isElectron } from "../../env";
 import { buildHostedChannelSelectionUrl, type HostedAppChannel } from "../../hostedPairing";
 import { useTheme } from "../../hooks/useTheme";
+import { useSkin, type AppSkin } from "../../hooks/useSkin";
 import { usePrimarySettings, useUpdatePrimarySettings } from "../../hooks/useSettings";
 import { useThreadActions } from "../../hooks/useThreadActions";
 import { useDesktopUpdateState } from "../../state/desktopUpdate";
@@ -949,6 +950,7 @@ function BackgroundActivityAdvancedDialog({
 
 export function AppearanceSettingsPanel() {
   const { theme, setTheme } = useTheme();
+  const { skin, setSkin, options: skinOptions } = useSkin();
   const settings = usePrimarySettings();
   const updateSettings = useUpdatePrimarySettings();
   const environmentStageLabel = useEnvironmentStageLabel();
@@ -988,6 +990,39 @@ export function AppearanceSettingsPanel() {
               </SelectTrigger>
               <SelectPopup align="end" alignItemWithTrigger={false}>
                 {THEME_OPTIONS.map((option) => (
+                  <SelectItem hideIndicator key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectPopup>
+            </Select>
+          }
+        />
+
+        <SettingsRow
+          title="Dark palette"
+          description="Charcoal Soft softens pure black and high-contrast white for nighttime use. Applies in dark mode."
+          resetAction={
+            skin !== "charcoal-soft" ? (
+              <SettingResetButton label="dark palette" onClick={() => setSkin("charcoal-soft")} />
+            ) : null
+          }
+          control={
+            <Select
+              value={skin}
+              onValueChange={(value) => {
+                if (value === "default" || value === "charcoal-soft") {
+                  setSkin(value as AppSkin);
+                }
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-44" aria-label="Dark palette">
+                <SelectValue>
+                  {skinOptions.find((option) => option.value === skin)?.label ?? "Charcoal Soft"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectPopup align="end" alignItemWithTrigger={false}>
+                {skinOptions.map((option) => (
                   <SelectItem hideIndicator key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
