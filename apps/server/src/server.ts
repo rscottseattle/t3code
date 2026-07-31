@@ -6,6 +6,7 @@ import * as Schedule from "effect/Schedule";
 import { FetchHttpClient, HttpRouter, HttpServer } from "effect/unstable/http";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
+import * as ClaudeUsagePoller from "./accountUsage/ClaudeUsagePoller.ts";
 import * as BackgroundPolicy from "./background/BackgroundPolicy.ts";
 import * as HostPowerMonitor from "./background/HostPowerMonitor.ts";
 import * as ServerConfig from "./config.ts";
@@ -575,6 +576,7 @@ export const makeServerLayer = Layer.unwrap(
       runtimeStateLayer,
       tailscaleServeLayer,
       cloudDesiredLinkReconcileLayer,
+      ClaudeUsagePoller.layer,
     );
 
     return serverApplicationLayer.pipe(

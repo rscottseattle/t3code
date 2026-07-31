@@ -1,6 +1,7 @@
 import { ProviderDriverKind, ProviderInstanceId } from "@t3tools/contracts";
 import { describe, expect, it } from "@effect/vitest";
 
+import { usageResponseToRateLimitPayload } from "./ClaudeUsagePoller.ts";
 import { mergeUsageWindows, normalizeRateLimitPayload } from "./normalizeAccountUsage.ts";
 
 describe("normalizeRateLimitPayload", () => {
@@ -30,6 +31,96 @@ describe("normalizeRateLimitPayload", () => {
         usedPercent: 42,
         remainingPercent: 58,
       }),
+    ]);
+  });
+
+  it("returns null for a Claude rate_limit_event without any usage numbers", () => {
+    const snapshot = normalizeRateLimitPayload({
+      provider: ProviderDriverKind.make("claudeAgent"),
+      providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+      payload: {
+        rateLimits: {
+          type: "rate_limit_event",
+          rate_limit_info: {
+            status: "allowed",
+            resetsAt: 1_785_487_800,
+            rateLimitType: "five_hour",
+            overageStatus: "rejected",
+            overageDisabledReason: "org_level_disabled",
+            isUsingOverage: false,
+          },
+        },
+      },
+      updatedAt: "2026-07-31T00:00:00.000Z",
+    });
+
+    expect(snapshot).toBeNull();
+  });
+
+  it("falls back to surpassedThreshold when utilization is missing", () => {
+    const snapshot = normalizeRateLimitPayload({
+      provider: ProviderDriverKind.make("claudeAgent"),
+      providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+      payload: {
+        rateLimits: {
+          type: "rate_limit_event",
+          rate_limit_info: {
+            status: "allowed_warning",
+            resetsAt: 1_785_487_800,
+            rateLimitType: "five_hour",
+            surpassedThreshold: 50,
+          },
+        },
+      },
+      updatedAt: "2026-07-31T00:00:00.000Z",
+    });
+
+    expect(snapshot?.windows).toEqual([
+      expect.objectContaining({
+        id: "five_hour",
+        usedPercent: 50,
+        remainingPercent: 50,
+      }),
+    ]);
+  });
+
+  it("parses an OAuth /usage response through the poller payload wrapper", () => {
+    const snapshot = normalizeRateLimitPayload({
+      provider: ProviderDriverKind.make("claudeAgent"),
+      providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+      displayName: "Claude",
+      payload: usageResponseToRateLimitPayload({
+        five_hour: { utilization: 23, resets_at: "2026-07-31T05:00:00.000Z" },
+        seven_day: { utilization: 61.5, resets_at: "2026-08-03T00:00:00.000Z" },
+        seven_day_opus: { utilization: 12, resets_at: null },
+      }),
+      updatedAt: "2026-07-31T00:00:00.000Z",
+    });
+
+    expect(snapshot?.displayName).toBe("Claude");
+    expect(snapshot?.windows.map((w) => w.id)).toEqual([
+      "five_hour",
+      "seven_day",
+      "seven_day_opus",
+    ]);
+    expect(snapshot?.windows.find((w) => w.id === "seven_day")?.remainingPercent).toBe(38.5);
+    expect(snapshot?.windows.find((w) => w.id === "five_hour")?.resetsAt).toBe(
+      "2026-07-31T05:00:00.000Z",
+    );
+  });
+
+  it("wraps a /usage response that already nests rate_limits", () => {
+    const snapshot = normalizeRateLimitPayload({
+      provider: ProviderDriverKind.make("claudeAgent"),
+      providerInstanceId: ProviderInstanceId.make("claudeAgent"),
+      payload: usageResponseToRateLimitPayload({
+        rate_limits: { five_hour: { utilization: 77, resets_at: null } },
+      }),
+      updatedAt: "2026-07-31T00:00:00.000Z",
+    });
+
+    expect(snapshot?.windows).toEqual([
+      expect.objectContaining({ id: "five_hour", usedPercent: 77, remainingPercent: 23 }),
     ]);
   });
 

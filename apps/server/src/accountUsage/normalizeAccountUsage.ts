@@ -200,7 +200,10 @@ function extractClaudeWindows(payload: unknown): AccountUsageWindow[] {
       asString(info.rate_limit_type) ??
       asString(info.type) ??
       "five_hour";
-    const utilization = asNumber(info.utilization) ?? asNumber(info.usedPercent);
+    // Real events often omit utilization entirely; surpassedThreshold is the
+    // only usage signal they carry, so treat it as a usedPercent floor.
+    const utilization =
+      asNumber(info.utilization) ?? asNumber(info.usedPercent) ?? asNumber(info.surpassedThreshold);
     if (utilization !== null) {
       windows.push(makeWindow(type, utilization, toIsoResetsAt(info.resetsAt ?? info.resets_at)));
     }
