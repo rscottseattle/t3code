@@ -8,7 +8,12 @@ import {
   Minimize2Icon,
   WrapTextIcon,
 } from "lucide-react";
-import type { ScopedThreadRef, ServerProviderSkill } from "@t3tools/contracts";
+import {
+  EDITORS,
+  type EditorId,
+  type ScopedThreadRef,
+  type ServerProviderSkill,
+} from "@t3tools/contracts";
 import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
@@ -79,6 +84,8 @@ import { useRightPanelStore } from "../rightPanelStore";
 import { useActiveEnvironmentId } from "../state/entities";
 import { serverEnvironment } from "../state/server";
 import { assetEnvironment } from "../state/assets";
+import { projectEnvironment } from "../state/projects";
+import { shellEnvironment } from "../state/shell";
 import { usePreparedConnection } from "../state/session";
 import { previewEnvironment } from "../state/preview";
 import { useAtomCommand } from "../state/use-atom-command";
@@ -91,6 +98,7 @@ import {
   openUrlInPreview,
   BrowserPreviewUnavailableError,
 } from "../browser/openFileInPreview";
+import { revealInFileExplorerLabel } from "./preview/fileExplorerLabel";
 
 interface ChatMarkdownProps {
   text: string;
@@ -1014,6 +1022,12 @@ function MarkdownExternalLinkContent({
   );
 }
 
+const OPEN_WITH_PREFIX = "open-with:" as const;
+
+function editorLabel(editorId: EditorId): string {
+  return EDITORS.find((editor) => editor.id === editorId)?.label ?? editorId;
+}
+
 const MarkdownFileLink = memo(function MarkdownFileLink({
   href,
   targetPath,
@@ -1029,40 +1043,88 @@ const MarkdownFileLink = memo(function MarkdownFileLink({
   onOpenInBrowser,
   className,
 }: MarkdownFileLinkProps) {
-  const handleOpenInEditor = useCallback(() => {
-    void (async () => {
-      try {
-        const result = await onOpen(targetPath);
-        if (result._tag === "Success" || isAtomCommandInterrupted(result)) {
-          return;
+  const environmentId = useActiveEnvironmentId();
+  const serverConfig = useAtomValue(serverEnvironment.configValueAtom(environmentId));
+  const availableEditors = serverConfig?.availableEditors ?? [];
+  const openInEditorCommand = useAtomCommand(shellEnvironment.openInEditor, {
+    reportFailure: false,
+  });
+  const readProjectFile = useAtomQueryRunner(projectEnvironment.readFile, {
+    reportFailure: false,
+  });
+  const fileBasename = useMemo(() => {
+    const normalized = targetPath.replaceAll("\\", "/");
+    const parts = normalized.split("/");
+    return parts[parts.length - 1] || normalized;
+  }, [targetPath]);
+  const canOpenInViewer = Boolean(threadRef && workspaceRelativePath);
+  const canRevealInFolder =
+    typeof window !== "undefined" && Boolean(window.desktopBridge?.showItemInFolder);
+  const canCopyContents = Boolean(environmentId && workspaceRelativePath);
+  const revealLabel = revealInFileExplorerLabel(
+    typeof navigator !== "undefined" ? navigator.platform : "mac",
+  );
+
+  const handleOpenInEditor = useCallback(
+    (editorId?: EditorId | null) => {
+      void (async () => {
+        try {
+          if (editorId && environmentId) {
+            const result = await openInEditorCommand({
+              environmentId,
+              input: { cwd: targetPath, editor: editorId },
+            });
+            if (result._tag === "Success" || isAtomCommandInterrupted(result)) {
+              return;
+            }
+            reportMarkdownActionFailure(
+              { operation: "open-file-in-editor", target: targetPath },
+              result.cause,
+            );
+            const error = squashAtomCommandFailure(result);
+            toastManager.add(
+              stackedThreadToast({
+                type: "error",
+                title: "Unable to open file",
+                description: error instanceof Error ? error.message : "An error occurred.",
+              }),
+            );
+            return;
+          }
+
+          const result = await onOpen(targetPath);
+          if (result._tag === "Success" || isAtomCommandInterrupted(result)) {
+            return;
+          }
+          reportMarkdownActionFailure(
+            { operation: "open-file-in-editor", target: targetPath },
+            result.cause,
+          );
+          const error = squashAtomCommandFailure(result);
+          toastManager.add(
+            stackedThreadToast({
+              type: "error",
+              title: "Unable to open file",
+              description: error instanceof Error ? error.message : "An error occurred.",
+            }),
+          );
+        } catch (cause) {
+          reportMarkdownActionFailure(
+            { operation: "open-file-in-editor", target: targetPath },
+            cause,
+          );
+          toastManager.add(
+            stackedThreadToast({
+              type: "error",
+              title: "Unable to open file",
+              description: cause instanceof Error ? cause.message : "An error occurred.",
+            }),
+          );
         }
-        reportMarkdownActionFailure(
-          { operation: "open-file-in-editor", target: targetPath },
-          result.cause,
-        );
-        const error = squashAtomCommandFailure(result);
-        toastManager.add(
-          stackedThreadToast({
-            type: "error",
-            title: "Unable to open file",
-            description: error instanceof Error ? error.message : "An error occurred.",
-          }),
-        );
-      } catch (cause) {
-        reportMarkdownActionFailure(
-          { operation: "open-file-in-editor", target: targetPath },
-          cause,
-        );
-        toastManager.add(
-          stackedThreadToast({
-            type: "error",
-            title: "Unable to open file",
-            description: cause instanceof Error ? cause.message : "An error occurred.",
-          }),
-        );
-      }
-    })();
-  }, [onOpen, targetPath]);
+      })();
+    },
+    [environmentId, onOpen, openInEditorCommand, targetPath],
+  );
 
   const handleOpenInFilePreview = useCallback(() => {
     if (!threadRef || !workspaceRelativePath) {
@@ -1128,7 +1190,7 @@ const MarkdownFileLink = memo(function MarkdownFileLink({
           toastManager.add({
             type: "success",
             title: `${title} copied`,
-            description: value,
+            description: value.length > 200 ? `${value.slice(0, 200)}…` : value,
           });
         },
         (error) => {
@@ -1149,6 +1211,93 @@ const MarkdownFileLink = memo(function MarkdownFileLink({
     [targetPath],
   );
 
+  const handleCopyContents = useCallback(() => {
+    if (!environmentId || !workspaceRelativePath) {
+      toastManager.add(
+        stackedThreadToast({
+          type: "error",
+          title: "Unable to copy contents",
+          description: "No project path is available for this file.",
+        }),
+      );
+      return;
+    }
+    void (async () => {
+      try {
+        const absolutePath = iconPath.replaceAll("\\", "/");
+        const relativePath = workspaceRelativePath.replaceAll("\\", "/");
+        let workspaceRoot = absolutePath;
+        if (absolutePath.endsWith(relativePath)) {
+          workspaceRoot = absolutePath
+            .slice(0, absolutePath.length - relativePath.length)
+            .replace(/\/+$/, "");
+        } else {
+          const slash = absolutePath.lastIndexOf("/");
+          workspaceRoot = slash >= 0 ? absolutePath.slice(0, slash) : absolutePath;
+        }
+
+        const result = await readProjectFile({
+          environmentId,
+          input: {
+            cwd: workspaceRoot || absolutePath,
+            relativePath: workspaceRelativePath,
+          },
+        });
+        if (result._tag !== "Success") {
+          if (isAtomCommandInterrupted(result)) return;
+          reportMarkdownActionFailure(
+            { operation: "copy-file-contents", target: targetPath },
+            result.cause,
+          );
+          const error = squashAtomCommandFailure(result);
+          toastManager.add(
+            stackedThreadToast({
+              type: "error",
+              title: "Unable to copy contents",
+              description: error instanceof Error ? error.message : "An error occurred.",
+            }),
+          );
+          return;
+        }
+        handleCopy(result.value.contents, "Contents");
+      } catch (cause) {
+        reportMarkdownActionFailure({ operation: "copy-file-contents", target: targetPath }, cause);
+        toastManager.add(
+          stackedThreadToast({
+            type: "error",
+            title: "Unable to copy contents",
+            description: cause instanceof Error ? cause.message : "An error occurred.",
+          }),
+        );
+      }
+    })();
+  }, [environmentId, handleCopy, iconPath, readProjectFile, targetPath, workspaceRelativePath]);
+
+  const handleRevealInFolder = useCallback(() => {
+    const api = readLocalApi();
+    const reveal = api?.shell.showItemInFolder ?? window.desktopBridge?.showItemInFolder;
+    if (!reveal) {
+      toastManager.add(
+        stackedThreadToast({
+          type: "error",
+          title: `Unable to ${revealLabel.toLowerCase()}`,
+          description: "This action is only available in the desktop app.",
+        }),
+      );
+      return;
+    }
+    void reveal(iconPath).catch((cause: unknown) => {
+      reportMarkdownActionFailure({ operation: "reveal-in-folder", target: iconPath }, cause);
+      toastManager.add(
+        stackedThreadToast({
+          type: "error",
+          title: `Unable to ${revealLabel.toLowerCase()}`,
+          description: cause instanceof Error ? cause.message : "An error occurred.",
+        }),
+      );
+    });
+  }, [iconPath, revealLabel]);
+
   const handleContextMenu = useCallback(
     async (event: ReactMouseEvent<HTMLAnchorElement>) => {
       event.preventDefault();
@@ -1157,25 +1306,60 @@ const MarkdownFileLink = memo(function MarkdownFileLink({
       const api = readLocalApi();
       if (!api) return;
 
+      const openWithChildren = availableEditors.map((editorId) => ({
+        id: `${OPEN_WITH_PREFIX}${editorId}`,
+        label: editorLabel(editorId),
+      }));
+
       try {
         const clicked = await api.contextMenu.show(
           [
-            { id: "open", label: "Open in editor" },
+            ...(canOpenInViewer ? ([{ id: "open-viewer", label: "Open in viewer" }] as const) : []),
+            { id: "open-editor", label: "Open in editor" },
+            ...(openWithChildren.length > 0
+              ? ([
+                  {
+                    id: "open-with",
+                    label: "Open with",
+                    children: openWithChildren,
+                  },
+                ] as const)
+              : []),
             ...(onOpenInBrowser
               ? ([{ id: "open-in-browser", label: "Open in integrated browser" }] as const)
               : []),
+            { id: "copy-name", label: "Copy name" },
             { id: "copy-relative", label: "Copy relative path" },
             { id: "copy-full", label: "Copy full path" },
+            ...(canCopyContents
+              ? ([{ id: "copy-contents", label: "Copy contents" }] as const)
+              : []),
+            ...(canRevealInFolder ? ([{ id: "reveal", label: revealLabel }] as const) : []),
           ] as const,
           { x: event.clientX, y: event.clientY },
         );
 
-        if (clicked === "open") {
+        if (!clicked) return;
+
+        if (clicked === "open-viewer") {
+          handleOpenInFilePreview();
+          return;
+        }
+        if (clicked === "open-editor") {
           handleOpenInEditor();
+          return;
+        }
+        if (clicked.startsWith(OPEN_WITH_PREFIX)) {
+          const editorId = clicked.slice(OPEN_WITH_PREFIX.length) as EditorId;
+          handleOpenInEditor(editorId);
           return;
         }
         if (clicked === "open-in-browser") {
           handleOpenInBrowser();
+          return;
+        }
+        if (clicked === "copy-name") {
+          handleCopy(fileBasename, "Name");
           return;
         }
         if (clicked === "copy-relative") {
@@ -1184,6 +1368,14 @@ const MarkdownFileLink = memo(function MarkdownFileLink({
         }
         if (clicked === "copy-full") {
           handleCopy(targetPath, "Full path");
+          return;
+        }
+        if (clicked === "copy-contents") {
+          handleCopyContents();
+          return;
+        }
+        if (clicked === "reveal") {
+          handleRevealInFolder();
         }
       } catch (cause) {
         reportMarkdownActionFailure(
@@ -1192,7 +1384,23 @@ const MarkdownFileLink = memo(function MarkdownFileLink({
         );
       }
     },
-    [displayPath, handleCopy, handleOpenInBrowser, handleOpenInEditor, onOpenInBrowser, targetPath],
+    [
+      availableEditors,
+      canCopyContents,
+      canOpenInViewer,
+      canRevealInFolder,
+      displayPath,
+      fileBasename,
+      handleCopy,
+      handleCopyContents,
+      handleOpenInBrowser,
+      handleOpenInEditor,
+      handleOpenInFilePreview,
+      handleRevealInFolder,
+      onOpenInBrowser,
+      revealLabel,
+      targetPath,
+    ],
   );
 
   return (
@@ -1206,10 +1414,7 @@ const MarkdownFileLink = memo(function MarkdownFileLink({
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
-              if (onOpenInBrowser) {
-                handleOpenInBrowser();
-                return;
-              }
+              // Left-click always opens the in-app viewer when possible.
               handleOpenInFilePreview();
             }}
             onContextMenu={handleContextMenu}

@@ -1007,6 +1007,8 @@ export interface DesktopBridge {
     position?: { x: number; y: number },
   ) => Promise<T | null>;
   openExternal: (url: string) => Promise<boolean>;
+  /** Reveal a local path in Finder / File Explorer / Files. Desktop only. */
+  showItemInFolder?: (path: string) => Promise<void>;
   onMenuAction: (listener: (action: string) => void) => () => void;
   getWindowFullscreenState: () => boolean;
   onWindowFullscreenStateChange: (listener: (fullscreen: boolean) => void) => () => void;
@@ -1111,6 +1113,8 @@ export interface LocalApi {
   };
   shell: {
     openExternal: (url: string) => Promise<void>;
+    /** Reveal a local path in the OS file manager when the host supports it. */
+    showItemInFolder?: (path: string) => Promise<void>;
   };
   contextMenu: {
     show: <T extends string>(

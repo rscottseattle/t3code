@@ -167,12 +167,23 @@ describe("resolveInlineCodeFileLinkMeta", () => {
     });
   });
 
-  it("links bare filenames only when a line suffix marks them as file references", () => {
+  it("links bare filenames with extensions when a workspace cwd is available", () => {
     expect(resolveInlineCodeFileLinkMeta("script.ts:10", "/Users/julius/project")).toMatchObject({
       targetPath: "/Users/julius/project/script.ts:10",
       line: 10,
     });
-    expect(resolveInlineCodeFileLinkMeta("AGENTS.md", "/Users/julius/project")).toBeNull();
+    expect(resolveInlineCodeFileLinkMeta("AGENTS.md", "/Users/julius/project")).toMatchObject({
+      filePath: "/Users/julius/project/AGENTS.md",
+      basename: "AGENTS.md",
+    });
+    expect(resolveInlineCodeFileLinkMeta("AGENTS.md")).toBeNull();
+  });
+
+  it("links multi-segment folder paths when a workspace cwd is available", () => {
+    expect(resolveInlineCodeFileLinkMeta("apps/web", "/Users/julius/project")).toMatchObject({
+      filePath: "/Users/julius/project/apps/web",
+    });
+    expect(resolveInlineCodeFileLinkMeta("apps/web")).toBeNull();
   });
 
   it("links extensionless bare filenames with a line suffix", () => {
@@ -260,9 +271,9 @@ describe("resolveInlineCodeFileLinkMeta", () => {
     expect(resolveInlineCodeFileLinkMeta("src/**/*.ts", "/Users/julius/project")).toBeNull();
   });
 
-  it("ignores extension-less relative segments like git refs and directories", () => {
+  it("ignores git-ref shaped paths without extensions", () => {
     expect(resolveInlineCodeFileLinkMeta("origin/main", "/Users/julius/project")).toBeNull();
-    expect(resolveInlineCodeFileLinkMeta("apps/web", "/Users/julius/project")).toBeNull();
+    expect(resolveInlineCodeFileLinkMeta("upstream/release", "/Users/julius/project")).toBeNull();
   });
 
   it("ignores external urls", () => {

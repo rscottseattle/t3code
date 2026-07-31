@@ -7,6 +7,7 @@ import {
   PRIMARY_LOCAL_ENVIRONMENT_ID,
   type DesktopEnvironmentBootstrap,
 } from "@t3tools/contracts";
+import { shell as electronShellApi } from "electron";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
@@ -266,5 +267,20 @@ export const openExternal = DesktopIpc.makeIpcMethod({
   handler: Effect.fn("desktop.ipc.window.openExternal")(function* (url) {
     const shell = yield* ElectronShell.ElectronShell;
     return yield* shell.openExternal(url);
+  }),
+});
+
+export const showItemInFolder = DesktopIpc.makeIpcMethod({
+  channel: IpcChannels.SHOW_ITEM_IN_FOLDER_CHANNEL,
+  payload: Schema.String,
+  result: Schema.Void,
+  handler: Effect.fn("desktop.ipc.window.showItemInFolder")(function* (targetPath) {
+    const trimmed = targetPath.trim();
+    if (trimmed.length === 0) {
+      return;
+    }
+    yield* Effect.sync(() => {
+      electronShellApi.showItemInFolder(trimmed);
+    });
   }),
 });

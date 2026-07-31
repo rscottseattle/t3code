@@ -304,11 +304,116 @@ function looksLikeHostname(segment: string, hasPosition: boolean): boolean {
   return !hasPosition && COUNTRY_HOSTNAME_TLDS.has(lastLabel);
 }
 
+const GIT_REF_SECOND_SEGMENTS = new Set([
+  "main",
+  "master",
+  "develop",
+  "development",
+  "trunk",
+  "head",
+  "staging",
+  "production",
+  "release",
+  "hotfix",
+  "feature",
+  "bugfix",
+  "dev",
+  "canary",
+  "next",
+  "prev",
+  "upstream",
+  "origin",
+]);
+
+/** Bare `file.ext` without a folder: only common source/doc extensions. */
+const BARE_FILENAME_EXTENSIONS = new Set([
+  "astro",
+  "bash",
+  "c",
+  "cc",
+  "cjs",
+  "cpp",
+  "cs",
+  "css",
+  "cts",
+  "cxx",
+  "env",
+  "fish",
+  "go",
+  "gql",
+  "gradle",
+  "graphql",
+  "h",
+  "hpp",
+  "htm",
+  "html",
+  "ini",
+  "java",
+  "js",
+  "json",
+  "jsonc",
+  "jsx",
+  "kt",
+  "kts",
+  "less",
+  "lock",
+  "lua",
+  "md",
+  "mdx",
+  "mjs",
+  "mts",
+  "php",
+  "proto",
+  "py",
+  "rb",
+  "rs",
+  "sass",
+  "scss",
+  "sh",
+  "sql",
+  "svelte",
+  "swift",
+  "toml",
+  "ts",
+  "tsx",
+  "txt",
+  "vue",
+  "xml",
+  "yaml",
+  "yml",
+  "zsh",
+]);
+
+/** `origin/main`, `upstream/release` — branch refs, not directories. */
+function looksLikeGitRefPath(path: string): boolean {
+  if (PATH_SEPARATOR_PATTERN.test(path) === false) return false;
+  if (FILE_EXTENSION_PATTERN.test(basenameOfPath(path))) return false;
+  const segments = path.replaceAll("\\", "/").split("/").filter(Boolean);
+  if (segments.length !== 2) return false;
+  const [first, second] = segments;
+  if (!first || !second) return false;
+  if (first === "origin" || first === "upstream" || first === "remote") return true;
+  return GIT_REF_SECOND_SEGMENTS.has(second.toLowerCase()) && !first.includes(".");
+}
+
+function bareFilenameExtension(path: string): string | null {
+  const match = basenameOfPath(path).match(/\.([A-Za-z0-9_-]+)$/);
+  return match?.[1]?.toLowerCase() ?? null;
+}
+
+function isBareFilenameWithKnownExtension(path: string): boolean {
+  const ext = bareFilenameExtension(path);
+  return ext !== null && BARE_FILENAME_EXTENSIONS.has(ext);
+}
+
 /**
  * Inline code spans mostly hold identifiers, commands, and refs (`node.meta`,
  * `origin/main`) rather than deliberate link destinations, so auto-linking
  * them demands stronger path evidence than an explicit markdown link does:
- * an unambiguous path prefix, a file extension, or a :line suffix.
+ * an unambiguous path prefix, a file extension, a folder path, or a :line suffix.
+ *
+ * Soft-fork: also accept bare filenames with extensions when a workspace cwd
+ * is available (e.g. `README.md`), and multi-segment folder paths (`src/app`).
  */
 export function resolveInlineCodeFileLinkMeta(
   codeText: string,
@@ -316,6 +421,8 @@ export function resolveInlineCodeFileLinkMeta(
 ): MarkdownFileLinkMeta | null {
   const trimmed = codeText.trim();
   if (trimmed.length === 0 || INLINE_CODE_DISQUALIFIER_PATTERN.test(trimmed)) return null;
+  // Glob patterns are not openable paths.
+  if (trimmed.includes("*") || trimmed.includes("?") || trimmed.includes("[")) return null;
 
   // Windows drive/UNC paths keep their backslashes; any other backslashes are
   // relative Windows-style paths, which neither the shape checks nor the
@@ -326,7 +433,17 @@ export function resolveInlineCodeFileLinkMeta(
       : trimmed.replaceAll("\\", "/");
 
   const hasPosition = POSITION_SUFFIX_PATTERN.test(candidate);
-  if (!hasPosition && !PATH_SEPARATOR_PATTERN.test(candidate)) return null;
+  const hasSeparator = PATH_SEPARATOR_PATTERN.test(candidate);
+  const withoutPosition = candidate.replace(POSITION_SUFFIX_PATTERN, "");
+  const bareNameWithExtension =
+    !hasSeparator &&
+    isBareFilenameWithKnownExtension(withoutPosition) &&
+    !looksLikeHostname(withoutPosition, hasPosition);
+
+  // Bare `README.md` / `script.ts` need a workspace root to resolve.
+  if (!hasPosition && !hasSeparator && !bareNameWithExtension) return null;
+  if (bareNameWithExtension && !cwd) return null;
+  if (looksLikeGitRefPath(withoutPosition)) return null;
 
   const hasExplicitPathShape =
     RELATIVE_PATH_PREFIX_PATTERN.test(candidate) ||
@@ -334,16 +451,29 @@ export function resolveInlineCodeFileLinkMeta(
     WINDOWS_DRIVE_PATH_PATTERN.test(candidate) ||
     WINDOWS_UNC_PATH_PATTERN.test(candidate);
   if (!hasExplicitPathShape) {
-    const withoutPosition = candidate.replace(POSITION_SUFFIX_PATTERN, "");
     const firstSegment = withoutPosition.split("/")[0] ?? withoutPosition;
     if (looksLikeHostname(firstSegment, hasPosition)) return null;
-    if (!hasPosition && !FILE_EXTENSION_PATTERN.test(basenameOfPath(withoutPosition))) {
+    const basename = basenameOfPath(withoutPosition);
+    const hasFileExtension = FILE_EXTENSION_PATTERN.test(basename);
+    // Allow: paths with extension, :line suffixes, multi-segment folders, bare extended names.
+    if (!hasPosition && !hasFileExtension && !hasSeparator && !bareNameWithExtension) {
+      return null;
+    }
+    // Multi-segment without extension = folder candidate when cwd is known.
+    if (!hasPosition && !hasFileExtension && hasSeparator && !cwd) {
       return null;
     }
   }
 
   const resolved = resolveMarkdownFileLinkMeta(candidate, cwd);
   if (resolved) return resolved;
+
+  // Bare `AGENTS.md` / folder paths that only resolve with an explicit cwd join.
+  if (cwd && (bareNameWithExtension || (hasSeparator && !hasPosition))) {
+    if (isLikelyPathCandidate(candidate) || bareNameWithExtension || hasSeparator) {
+      return buildFileLinkMetaFromTarget(resolvePathLinkTarget(candidate, cwd), cwd);
+    }
+  }
 
   // `Makefile:12` — conventional extensionless names fail the generic
   // markdown-link candidate patterns, but here the :line suffix already
