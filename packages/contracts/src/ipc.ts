@@ -958,6 +958,35 @@ export const DesktopPreviewAutomationWaitForInputSchema = Schema.Struct({
   input: PreviewAutomationWaitForInput,
 });
 
+/**
+ * Soft-fork: result of the "Update from upstream" pipeline (git merge of
+ * upstream T3 into the local T3r checkout, plus an optional detached DMG
+ * rebuild).
+ */
+export const SoftForkUpdateStatusSchema = Schema.Literals([
+  "merged",
+  "up-to-date",
+  "dirty",
+  "conflict",
+  "error",
+]);
+export type SoftForkUpdateStatus = typeof SoftForkUpdateStatusSchema.Type;
+
+export const SoftForkUpdateInputSchema = Schema.Struct({
+  rebuild: Schema.Boolean,
+});
+export type SoftForkUpdateInput = typeof SoftForkUpdateInputSchema.Type;
+
+export const SoftForkUpdateResultSchema = Schema.Struct({
+  status: SoftForkUpdateStatusSchema,
+  message: Schema.String,
+  mergedCommits: Schema.optionalKey(Schema.Number),
+  conflictFiles: Schema.optionalKey(Schema.Array(Schema.String)),
+  buildStarted: Schema.optionalKey(Schema.Boolean),
+  buildLogPath: Schema.optionalKey(Schema.String),
+});
+export type SoftForkUpdateResult = typeof SoftForkUpdateResultSchema.Type;
+
 export interface DesktopBridge {
   getAppBranding: () => DesktopAppBranding | null;
   // One bootstrap per pool instance currently registered with bootstrap
@@ -1012,6 +1041,11 @@ export interface DesktopBridge {
   onMenuAction: (listener: (action: string) => void) => () => void;
   getWindowFullscreenState: () => boolean;
   onWindowFullscreenStateChange: (listener: (fullscreen: boolean) => void) => () => void;
+  /**
+   * Soft-fork: merge upstream T3 into the local T3r checkout and optionally
+   * kick off a detached DMG rebuild. Desktop only; absent in stock builds.
+   */
+  runSoftForkUpdate?: (options: SoftForkUpdateInput) => Promise<SoftForkUpdateResult>;
   getUpdateState: () => Promise<DesktopUpdateState>;
   setUpdateChannel: (channel: DesktopUpdateChannel) => Promise<DesktopUpdateState>;
   checkForUpdate: () => Promise<DesktopUpdateCheckResult>;
