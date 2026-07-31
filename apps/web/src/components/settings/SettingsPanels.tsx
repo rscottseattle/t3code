@@ -1001,7 +1001,10 @@ export function AppearanceSettingsPanel() {
 
         <SettingsRow
           title="Dark palette"
-          description="Charcoal Soft softens pure black and high-contrast white for nighttime use. Applies in dark mode."
+          description={
+            skinOptions.find((option) => option.value === skin)?.description ??
+            "Charcoal dark skins with light text. Applies in dark mode."
+          }
           resetAction={
             skin !== "charcoal-soft" ? (
               <SettingResetButton label="dark palette" onClick={() => setSkin("charcoal-soft")} />
@@ -1011,12 +1014,19 @@ export function AppearanceSettingsPanel() {
             <Select
               value={skin}
               onValueChange={(value) => {
-                if (value === "default" || value === "charcoal-soft") {
+                if (
+                  value === "default" ||
+                  value === "charcoal-soft" ||
+                  value === "charcoal-slate" ||
+                  value === "charcoal-graphite" ||
+                  value === "charcoal-frost" ||
+                  value === "charcoal-ember"
+                ) {
                   setSkin(value as AppSkin);
                 }
               }}
             >
-              <SelectTrigger className="w-full sm:w-44" aria-label="Dark palette">
+              <SelectTrigger className="w-full sm:w-48" aria-label="Dark palette">
                 <SelectValue>
                   {skinOptions.find((option) => option.value === skin)?.label ?? "Charcoal Soft"}
                 </SelectValue>

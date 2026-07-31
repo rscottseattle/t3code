@@ -1,0 +1,282 @@
+/**
+ * Fork dark skins — all charcoal bases + light text (no pure black void).
+ *
+ * Activate with: html.dark[data-skin="<id>"]
+ *
+ * | id                 | Character                                      |
+ * |--------------------|------------------------------------------------|
+ * | charcoal-soft      | Neutral graphite, gentle contrast (default)    |
+ * | charcoal-slate     | Cool blue-slate undertone                      |
+ * | charcoal-graphite  | Flat graphite, cleaner/crisper whites          |
+ * | charcoal-frost     | Soft frost: more translucent elevated surfaces |
+ * | charcoal-ember     | Warm brown-charcoal, evening-lamp feel         |
+ */
+
+/* Shared helpers: each skin still sets full tokens for sidebar overrides. */
+
+/* ─── 1. Charcoal Soft ─────────────────────────────────────────────────── */
+html.dark[data-skin="charcoal-soft"] {
+  --background: #1b1c20;
+  --app-chrome-background: #1b1c20;
+  --surface-raised: color-mix(in srgb, #2c2e35 90%, transparent);
+  --foreground: #f0f1f4;
+  --card: #23252b;
+  --card-foreground: #f0f1f4;
+  --popover: #272930;
+  --popover-foreground: #f0f1f4;
+  --primary: oklch(0.64 0.13 264);
+  --primary-foreground: #ffffff;
+  --secondary: color-mix(in srgb, #ffffff 6%, transparent);
+  --secondary-foreground: #f0f1f4;
+  --muted: #2c2e35;
+  --muted-foreground: #a0a4ae;
+  --accent: color-mix(in srgb, #ffffff 7%, transparent);
+  --accent-foreground: #ffffff;
+  --border: color-mix(in srgb, #ffffff 9%, transparent);
+  --input: color-mix(in srgb, #ffffff 11%, transparent);
+  --ring: oklch(0.64 0.12 264);
+  --sidebar: #1f2126;
+  --sidebar-foreground: #f0f1f4;
+  --sidebar-muted-foreground: #a0a4ae;
+  --sidebar-control-surface: #2c2e35;
+  --sidebar-row-hover: color-mix(in srgb, #ffffff 6%, transparent);
+  --sidebar-row-active: color-mix(in srgb, #ffffff 8%, transparent);
+  --sidebar-row-selected: color-mix(in srgb, #ffffff 7%, transparent);
+  --sidebar-border: color-mix(in srgb, #ffffff 8%, transparent);
+  --sidebar-stage-fade: #1f2126;
+  --glass-blur: 16px;
+  --glass-opacity: 74%;
+  --glass-saturation: 1.05;
+  --app-scrollbar-thumb: rgb(255 255 255 / 11%);
+  --app-scrollbar-thumb-hover: rgb(255 255 255 / 16%);
+  --chat-composer-glass-surface: #292b32;
+  --chat-composer-outline: rgb(255 255 255 / 7%);
+}
+
+/* ─── 2. Charcoal Slate ────────────────────────────────────────────────── */
+html.dark[data-skin="charcoal-slate"] {
+  --background: #181b22;
+  --app-chrome-background: #181b22;
+  --surface-raised: color-mix(in srgb, #2a3040 90%, transparent);
+  --foreground: #eef1f7;
+  --card: #1e232c;
+  --card-foreground: #eef1f7;
+  --popover: #232935;
+  --popover-foreground: #eef1f7;
+  --primary: oklch(0.66 0.11 250);
+  --primary-foreground: #ffffff;
+  --secondary: color-mix(in srgb, #9db4ff 8%, transparent);
+  --secondary-foreground: #eef1f7;
+  --muted: #272d3a;
+  --muted-foreground: #97a0b2;
+  --accent: color-mix(in srgb, #9db4ff 10%, transparent);
+  --accent-foreground: #ffffff;
+  --border: color-mix(in srgb, #b8c7e8 10%, transparent);
+  --input: color-mix(in srgb, #b8c7e8 12%, transparent);
+  --ring: oklch(0.66 0.1 250);
+  --sidebar: #1a1e27;
+  --sidebar-foreground: #eef1f7;
+  --sidebar-muted-foreground: #97a0b2;
+  --sidebar-control-surface: #272d3a;
+  --sidebar-row-hover: color-mix(in srgb, #9db4ff 9%, transparent);
+  --sidebar-row-active: color-mix(in srgb, #9db4ff 12%, transparent);
+  --sidebar-row-selected: color-mix(in srgb, #9db4ff 10%, transparent);
+  --sidebar-border: color-mix(in srgb, #b8c7e8 9%, transparent);
+  --sidebar-stage-fade: #1a1e27;
+  --glass-blur: 18px;
+  --glass-opacity: 72%;
+  --glass-saturation: 1.08;
+  --app-scrollbar-thumb: rgb(180 200 240 / 14%);
+  --app-scrollbar-thumb-hover: rgb(180 200 240 / 20%);
+  --chat-composer-glass-surface: #252b38;
+  --chat-composer-outline: rgb(160 185 230 / 10%);
+}
+
+/* ─── 3. Charcoal Graphite ─────────────────────────────────────────────── */
+html.dark[data-skin="charcoal-graphite"] {
+  --background: #1a1a1c;
+  --app-chrome-background: #1a1a1c;
+  --surface-raised: color-mix(in srgb, #2e2e32 92%, transparent);
+  --foreground: #f5f5f7;
+  --card: #222226;
+  --card-foreground: #f5f5f7;
+  --popover: #28282d;
+  --popover-foreground: #f5f5f7;
+  --primary: oklch(0.7 0.02 280);
+  --primary-foreground: #111113;
+  --secondary: color-mix(in srgb, #ffffff 7%, transparent);
+  --secondary-foreground: #f5f5f7;
+  --muted: #2c2c31;
+  --muted-foreground: #a8a8b0;
+  --accent: color-mix(in srgb, #ffffff 8%, transparent);
+  --accent-foreground: #ffffff;
+  --border: color-mix(in srgb, #ffffff 10%, transparent);
+  --input: color-mix(in srgb, #ffffff 12%, transparent);
+  --ring: oklch(0.72 0.02 280);
+  --sidebar: #1d1d20;
+  --sidebar-foreground: #f5f5f7;
+  --sidebar-muted-foreground: #a8a8b0;
+  --sidebar-control-surface: #2c2c31;
+  --sidebar-row-hover: color-mix(in srgb, #ffffff 7%, transparent);
+  --sidebar-row-active: color-mix(in srgb, #ffffff 10%, transparent);
+  --sidebar-row-selected: color-mix(in srgb, #ffffff 8%, transparent);
+  --sidebar-border: color-mix(in srgb, #ffffff 9%, transparent);
+  --sidebar-stage-fade: #1d1d20;
+  --glass-blur: 14px;
+  --glass-opacity: 78%;
+  --glass-saturation: 1.02;
+  --app-scrollbar-thumb: rgb(255 255 255 / 12%);
+  --app-scrollbar-thumb-hover: rgb(255 255 255 / 18%);
+  --chat-composer-glass-surface: #2a2a2f;
+  --chat-composer-outline: rgb(255 255 255 / 8%);
+}
+
+/* ─── 4. Charcoal Frost ────────────────────────────────────────────────── */
+html.dark[data-skin="charcoal-frost"] {
+  --background: #17191e;
+  --app-chrome-background: #17191e;
+  --surface-raised: color-mix(in srgb, #2f3340 70%, transparent);
+  --foreground: #f2f4f8;
+  --card: color-mix(in srgb, #252933 88%, transparent);
+  --card-foreground: #f2f4f8;
+  --popover: color-mix(in srgb, #2a2f3a 92%, transparent);
+  --popover-foreground: #f2f4f8;
+  --primary: oklch(0.68 0.1 230);
+  --primary-foreground: #ffffff;
+  --secondary: color-mix(in srgb, #c8d4ff 7%, transparent);
+  --secondary-foreground: #f2f4f8;
+  --muted: color-mix(in srgb, #343a48 92%, transparent);
+  --muted-foreground: #9aa3b5;
+  --accent: color-mix(in srgb, #c8d4ff 9%, transparent);
+  --accent-foreground: #ffffff;
+  --border: color-mix(in srgb, #ffffff 8%, transparent);
+  --input: color-mix(in srgb, #ffffff 10%, transparent);
+  --ring: oklch(0.68 0.09 230);
+  --sidebar: color-mix(in srgb, #1c1f27 94%, transparent);
+  --sidebar-foreground: #f2f4f8;
+  --sidebar-muted-foreground: #9aa3b5;
+  --sidebar-control-surface: color-mix(in srgb, #343a48 90%, transparent);
+  --sidebar-row-hover: color-mix(in srgb, #ffffff 6%, transparent);
+  --sidebar-row-active: color-mix(in srgb, #c8d4ff 10%, transparent);
+  --sidebar-row-selected: color-mix(in srgb, #c8d4ff 8%, transparent);
+  --sidebar-border: color-mix(in srgb, #ffffff 7%, transparent);
+  --sidebar-stage-fade: #1c1f27;
+  --glass-blur: 22px;
+  --glass-opacity: 64%;
+  --glass-saturation: 1.12;
+  --app-scrollbar-thumb: rgb(200 210 240 / 12%);
+  --app-scrollbar-thumb-hover: rgb(200 210 240 / 18%);
+  --chat-composer-glass-surface: color-mix(in srgb, #2c3140 85%, transparent);
+  --chat-composer-outline: rgb(200 215 255 / 9%);
+}
+
+/* ─── 5. Charcoal Ember ────────────────────────────────────────────────── */
+html.dark[data-skin="charcoal-ember"] {
+  --background: #1c1917;
+  --app-chrome-background: #1c1917;
+  --surface-raised: color-mix(in srgb, #35302c 90%, transparent);
+  --foreground: #f5f0eb;
+  --card: #25211e;
+  --card-foreground: #f5f0eb;
+  --popover: #2b2622;
+  --popover-foreground: #f5f0eb;
+  --primary: oklch(0.68 0.1 55);
+  --primary-foreground: #1a120c;
+  --secondary: color-mix(in srgb, #ffd0a8 7%, transparent);
+  --secondary-foreground: #f5f0eb;
+  --muted: #322d28;
+  --muted-foreground: #a89f96;
+  --accent: color-mix(in srgb, #ffd0a8 9%, transparent);
+  --accent-foreground: #fff8f2;
+  --border: color-mix(in srgb, #ffd0a8 9%, transparent);
+  --input: color-mix(in srgb, #ffd0a8 11%, transparent);
+  --ring: oklch(0.68 0.09 55);
+  --sidebar: #201c19;
+  --sidebar-foreground: #f5f0eb;
+  --sidebar-muted-foreground: #a89f96;
+  --sidebar-control-surface: #322d28;
+  --sidebar-row-hover: color-mix(in srgb, #ffd0a8 7%, transparent);
+  --sidebar-row-active: color-mix(in srgb, #ffd0a8 11%, transparent);
+  --sidebar-row-selected: color-mix(in srgb, #ffd0a8 9%, transparent);
+  --sidebar-border: color-mix(in srgb, #ffd0a8 8%, transparent);
+  --sidebar-stage-fade: #201c19;
+  --glass-blur: 16px;
+  --glass-opacity: 74%;
+  --glass-saturation: 1.06;
+  --app-scrollbar-thumb: rgb(255 210 170 / 12%);
+  --app-scrollbar-thumb-hover: rgb(255 210 170 / 18%);
+  --chat-composer-glass-surface: #2e2925;
+  --chat-composer-outline: rgb(255 210 170 / 8%);
+}
+
+/* Sidebar layout panels: keep skins on charcoal, never pure black */
+html.dark[data-skin="charcoal-soft"] [data-sidebar-version="v1"],
+html.dark[data-skin="charcoal-soft"] [data-sidebar-version="v2"],
+html.dark[data-skin="charcoal-slate"] [data-sidebar-version="v1"],
+html.dark[data-skin="charcoal-slate"] [data-sidebar-version="v2"],
+html.dark[data-skin="charcoal-graphite"] [data-sidebar-version="v1"],
+html.dark[data-skin="charcoal-graphite"] [data-sidebar-version="v2"],
+html.dark[data-skin="charcoal-frost"] [data-sidebar-version="v1"],
+html.dark[data-skin="charcoal-frost"] [data-sidebar-version="v2"],
+html.dark[data-skin="charcoal-ember"] [data-sidebar-version="v1"],
+html.dark[data-skin="charcoal-ember"] [data-sidebar-version="v2"] {
+  --background: var(--background);
+  --foreground: var(--foreground);
+  --card: var(--sidebar);
+  --card-foreground: var(--sidebar-foreground);
+  --accent: var(--sidebar-control-surface);
+  --accent-foreground: var(--accent-foreground);
+  --muted: var(--muted);
+  --muted-foreground: var(--sidebar-muted-foreground);
+  --border: var(--sidebar-border);
+  --input: var(--input);
+  --sidebar: var(--sidebar);
+  --sidebar-foreground: var(--sidebar-foreground);
+  --sidebar-muted-foreground: var(--sidebar-muted-foreground);
+  --sidebar-control-surface: var(--sidebar-control-surface);
+  --sidebar-row-hover: var(--sidebar-row-hover);
+  --sidebar-row-active: var(--sidebar-row-active);
+  --sidebar-row-selected: var(--sidebar-row-selected);
+  --sidebar-border: var(--sidebar-border);
+  --sidebar-stage-fade: var(--sidebar-stage-fade);
+  background-color: var(--sidebar);
+}
+
+/* Stage art: quieter so it sits in charcoal chrome */
+html.dark[data-skin="charcoal-soft"] .stage-blueprint {
+  --stage-bp-top: #4a6fa8;
+  --stage-bp-mid: #2f4d7a;
+  --stage-bp-bottom: #1a2a45;
+}
+html.dark[data-skin="charcoal-slate"] .stage-blueprint {
+  --stage-bp-top: #5a7eb8;
+  --stage-bp-mid: #3a5a92;
+  --stage-bp-bottom: #1e3358;
+}
+html.dark[data-skin="charcoal-graphite"] .stage-blueprint {
+  --stage-bp-top: #6a6a75;
+  --stage-bp-mid: #454550;
+  --stage-bp-bottom: #26262e;
+}
+html.dark[data-skin="charcoal-frost"] .stage-blueprint {
+  --stage-bp-top: #6a8ec8;
+  --stage-bp-mid: #4568a0;
+  --stage-bp-bottom: #243a62;
+}
+html.dark[data-skin="charcoal-ember"] .stage-blueprint {
+  --stage-bp-top: #c48a58;
+  --stage-bp-mid: #8a5a32;
+  --stage-bp-bottom: #4a2e18;
+}
+
+/* Composer glass edge polish for all charcoal skins */
+html.dark[data-skin^="charcoal-"] .chat-composer-glass-shell {
+  --chat-composer-glass-surface: var(--chat-composer-glass-surface, var(--card));
+  --chat-composer-outline: var(--chat-composer-outline, rgb(255 255 255 / 7%));
+}
+
+html.dark[data-skin^="charcoal-"] .chat-composer-glass-shell::before {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 7%, transparent),
+    0 0 0 1px rgb(0 0 0 / 22%);
+}
