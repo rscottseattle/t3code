@@ -630,6 +630,11 @@ export function createServerEnvironmentAtoms<R, E>(
       tag: WS_METHODS.serverGetResourceTelemetryHistory,
       staleTimeMs: 5_000,
     }),
+    accountUsage: createEnvironmentRpcSubscriptionAtomFamily(runtime, {
+      label: "environment-data:server:account-usage",
+      tag: WS_METHODS.subscribeAccountUsage,
+      idleTtlMs: 0,
+    }),
     configProjection,
     welcome: createEnvironmentRpcSubscriptionAtomFamily(runtime, {
       label: "environment-data:server:welcome",

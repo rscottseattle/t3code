@@ -76,7 +76,8 @@ export class DesktopEnvironment extends Context.Service<
   }
 >()("@t3tools/desktop/app/DesktopEnvironment") {}
 
-const APP_BASE_NAME = "T3 Code";
+// Soft-fork product name (stock upstream is "T3 Code").
+const APP_BASE_NAME = "T3r";
 
 function resolveDesktopAppStageLabel(input: {
   readonly isDevelopment: boolean;
@@ -94,10 +95,15 @@ function resolveDesktopAppBranding(input: {
   readonly appVersion: string;
 }): DesktopAppBranding {
   const stageLabel = resolveDesktopAppStageLabel(input);
+  // Soft-fork: ship as plain "T3r" outside dev; keep (Dev) only for local runs.
+  const displayName =
+    stageLabel === "Dev" || stageLabel === "Nightly"
+      ? `${APP_BASE_NAME} (${stageLabel})`
+      : APP_BASE_NAME;
   return {
     baseName: APP_BASE_NAME,
     stageLabel,
-    displayName: `${APP_BASE_NAME} (${stageLabel})`,
+    displayName,
   };
 }
 
@@ -160,8 +166,8 @@ const make = Effect.fn("desktop.environment.make")(function* (
     baseDir,
     isDevelopment && Option.isNone(configuredBaseDir) ? "dev" : "userdata",
   );
-  const userDataDirName = isDevelopment ? "t3code-dev" : "t3code";
-  const legacyUserDataDirName = isDevelopment ? "T3 Code (Dev)" : "T3 Code (Alpha)";
+  const userDataDirName = isDevelopment ? "t3r-dev" : "t3r";
+  const legacyUserDataDirName = isDevelopment ? "T3r (Dev)" : "T3r";
   const resourcesPath = input.resourcesPath;
 
   return DesktopEnvironment.of({
@@ -201,10 +207,10 @@ const make = Effect.fn("desktop.environment.make")(function* (
     branding,
     displayName,
     appUserModelId: Option.getOrElse(config.appUserModelIdOverride, () =>
-      isDevelopment ? "com.t3tools.t3code.dev" : "com.t3tools.t3code",
+      isDevelopment ? "com.t3tools.t3r.dev" : "com.t3tools.t3r",
     ),
-    linuxDesktopEntryName: isDevelopment ? "t3code-dev.desktop" : "t3code.desktop",
-    linuxWmClass: isDevelopment ? "t3code-dev" : "t3code",
+    linuxDesktopEntryName: isDevelopment ? "t3r-dev.desktop" : "t3r.desktop",
+    linuxWmClass: isDevelopment ? "t3r-dev" : "t3r",
     userDataDirName,
     legacyUserDataDirName,
     defaultDesktopSettings: DesktopAppSettings.resolveDefaultDesktopSettings(input.appVersion),

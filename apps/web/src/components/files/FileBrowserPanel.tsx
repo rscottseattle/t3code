@@ -2,11 +2,17 @@ import type {
   ContextMenuItem as TreeContextMenuItem,
   ContextMenuOpenContext as TreeContextMenuOpenContext,
 } from "@pierre/trees";
-import type { EnvironmentId, ProjectEntry } from "@t3tools/contracts";
+import type { EditorId, EnvironmentId, ProjectEntry } from "@t3tools/contracts";
+import { EDITORS } from "@t3tools/contracts";
+import {
+  isAtomCommandInterrupted,
+  squashAtomCommandFailure,
+} from "@t3tools/client-runtime/state/runtime";
 import { FileTree, useFileTree, useFileTreeSearch } from "@pierre/trees/react";
 import { serializeComposerFileLink } from "@t3tools/shared/composerTrigger";
+import { useAtomValue } from "@effect/atom-react";
 import { RotateCw } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { Button } from "~/components/ui/button";
 import { InputGroup, InputGroupInput } from "~/components/ui/input-group";
@@ -18,9 +24,37 @@ import { useTheme } from "~/hooks/useTheme";
 import { cn } from "~/lib/utils";
 import { readLocalApi } from "~/localApi";
 import { T3_PIERRE_ICONS } from "~/pierre-icons";
+import { revealInFileExplorerLabel } from "~/components/preview/fileExplorerLabel";
+import { projectEnvironment } from "~/state/projects";
+import { shellEnvironment } from "~/state/shell";
+import { serverEnvironment } from "~/state/server";
+import { useAtomCommand } from "~/state/use-atom-command";
+import { useAtomQueryRunner } from "~/state/use-atom-query-runner";
+
+import { resolveAndPersistPreferredEditor } from "~/editorPreferences";
 
 import { createFileTreeDragMentionController } from "./fileTreeDragMention";
 import { useProjectEntriesQuery } from "./projectFilesQueryState";
+
+const OPEN_WITH_PREFIX = "open-with:" as const;
+
+function editorLabel(editorId: EditorId): string {
+  return EDITORS.find((editor) => editor.id === editorId)?.label ?? editorId;
+}
+
+function joinWorkspacePath(cwd: string, relativePath: string): string {
+  const base = cwd.replace(/[/\\]+$/, "");
+  const rel = relativePath.replace(/^[/\\]+/, "");
+  if (!rel) return base;
+  const sep = base.includes("\\") && !base.includes("/") ? "\\" : "/";
+  return `${base}${sep}${rel}`;
+}
+
+function pathBasename(pathValue: string): string {
+  const normalized = pathValue.replaceAll("\\", "/");
+  const parts = normalized.split("/");
+  return parts[parts.length - 1] || normalized;
+}
 
 interface FileBrowserPanelProps {
   environmentId: EnvironmentId;
@@ -133,67 +167,232 @@ export default function FileBrowserPanel({
     return () => document.removeEventListener("contextmenu", capturePointer, true);
   }, []);
 
-  const showEntryContextMenu = async (
-    item: TreeContextMenuItem,
-    context: TreeContextMenuOpenContext,
-  ) => {
-    const api = readLocalApi();
-    if (!api) {
-      context.close();
-      return;
-    }
-    const relativePath = item.path.replace(/\/$/, "");
-    const mention = serializeComposerFileLink(relativePath);
-    const pointer = contextMenuPointerRef.current;
-    const pointerIsFresh = pointer !== null && performance.now() - pointer.at < 1000;
-    const anchorRect = context.anchorElement.getBoundingClientRect();
-    const position = pointerIsFresh
-      ? { x: pointer.x, y: pointer.y }
-      : { x: anchorRect.left, y: anchorRect.bottom };
+  const serverConfig = useAtomValue(serverEnvironment.configValueAtom(environmentId));
+  const availableEditors = serverConfig?.availableEditors ?? [];
+  const openInEditorCommand = useAtomCommand(shellEnvironment.openInEditor, {
+    reportFailure: false,
+  });
+  const readProjectFile = useAtomQueryRunner(projectEnvironment.readFile, {
+    reportFailure: false,
+  });
+  const canRevealInFolder =
+    typeof window !== "undefined" && Boolean(window.desktopBridge?.showItemInFolder);
+  const revealLabel = revealInFileExplorerLabel(
+    typeof navigator !== "undefined" ? navigator.platform : "mac",
+  );
+
+  const copyText = useCallback(async (value: string, label: string) => {
     try {
-      const clicked = await api.contextMenu.show(
-        [
-          { id: "copy-mention", label: "Copy mention" },
-          { id: "add-to-chat", label: "Add to chat" },
-        ],
-        position,
-      );
-      if (clicked === "copy-mention") {
-        try {
-          await writeTextToClipboard(mention);
-          toastManager.add({ type: "success", title: "Mention copied", description: relativePath });
-        } catch (error) {
-          toastManager.add({
-            type: "error",
-            title: "Failed to copy mention",
-            description: error instanceof Error ? error.message : "An error occurred.",
-          });
-        }
+      await writeTextToClipboard(value);
+      toastManager.add({ type: "success", title: `${label} copied`, description: value });
+    } catch (error) {
+      toastManager.add({
+        type: "error",
+        title: `Failed to copy ${label.toLowerCase()}`,
+        description: error instanceof Error ? error.message : "An error occurred.",
+      });
+    }
+  }, []);
+
+  const openAbsoluteInEditor = useCallback(
+    async (absolutePath: string, editorId?: EditorId) => {
+      const editor = editorId ?? resolveAndPersistPreferredEditor(availableEditors);
+      if (!editor) {
+        toastManager.add({
+          type: "error",
+          title: "Unable to open in editor",
+          description: "No editor is available on this machine.",
+        });
         return;
       }
-      if (clicked === "add-to-chat") {
-        const composer = composerRef?.current;
-        if (!composer) {
-          toastManager.add({
-            type: "error",
-            title: "Unable to add to chat",
-            description: "Open a chat for this project and try again.",
-          });
+      try {
+        const result = await openInEditorCommand({
+          environmentId,
+          input: { cwd: absolutePath, editor },
+        });
+        if (result._tag === "Success" || isAtomCommandInterrupted(result)) {
           return;
         }
-        const inserted = composer.insertTextAtEnd(`${mention} `, { ensureLeadingBoundary: true });
-        if (!inserted) {
-          toastManager.add({
-            type: "error",
-            title: "Unable to add to chat",
-            description: "The chat isn't ready to accept input right now.",
-          });
-        }
+        const error = squashAtomCommandFailure(result);
+        toastManager.add({
+          type: "error",
+          title: "Unable to open in editor",
+          description: error instanceof Error ? error.message : "An error occurred.",
+        });
+      } catch (cause) {
+        toastManager.add({
+          type: "error",
+          title: "Unable to open in editor",
+          description: cause instanceof Error ? cause.message : "An error occurred.",
+        });
       }
-    } finally {
-      context.close();
-    }
-  };
+    },
+    [availableEditors, environmentId, openInEditorCommand],
+  );
+
+  const showEntryContextMenu = useCallback(
+    async (item: TreeContextMenuItem, context: TreeContextMenuOpenContext) => {
+      const api = readLocalApi();
+      if (!api) {
+        context.close();
+        return;
+      }
+      const relativePath = item.path.replace(/\/$/, "");
+      const isDirectory = entryKindsRef.current.get(relativePath) === "directory";
+      const isFile = !isDirectory;
+      const absolutePath = joinWorkspacePath(cwd, relativePath);
+      const basename = pathBasename(relativePath);
+      const mention = serializeComposerFileLink(relativePath);
+      const pointer = contextMenuPointerRef.current;
+      const pointerIsFresh = pointer !== null && performance.now() - pointer.at < 1000;
+      const anchorRect = context.anchorElement.getBoundingClientRect();
+      const position = pointerIsFresh
+        ? { x: pointer.x, y: pointer.y }
+        : { x: anchorRect.left, y: anchorRect.bottom };
+
+      const openWithChildren = availableEditors.map((editorId) => ({
+        id: `${OPEN_WITH_PREFIX}${editorId}`,
+        label: editorLabel(editorId),
+      }));
+
+      try {
+        const clicked = await api.contextMenu.show(
+          [
+            ...(isFile ? ([{ id: "open-viewer", label: "Open in viewer" }] as const) : []),
+            { id: "open-editor", label: "Open in editor" },
+            ...(openWithChildren.length > 0
+              ? ([
+                  {
+                    id: "open-with",
+                    label: "Open with",
+                    children: openWithChildren,
+                  },
+                ] as const)
+              : []),
+            { id: "copy-name", label: "Copy name" },
+            { id: "copy-relative", label: "Copy relative path" },
+            { id: "copy-full", label: "Copy full path" },
+            ...(isFile ? ([{ id: "copy-contents", label: "Copy contents" }] as const) : []),
+            ...(canRevealInFolder ? ([{ id: "reveal", label: revealLabel }] as const) : []),
+            { id: "copy-mention", label: "Copy mention" },
+            { id: "add-to-chat", label: "Add to chat" },
+          ] as const,
+          position,
+        );
+
+        if (!clicked) return;
+
+        if (clicked === "open-viewer") {
+          onOpenFile(relativePath);
+          return;
+        }
+        if (clicked === "open-editor") {
+          await openAbsoluteInEditor(absolutePath);
+          return;
+        }
+        if (clicked.startsWith(OPEN_WITH_PREFIX)) {
+          const editorId = clicked.slice(OPEN_WITH_PREFIX.length) as EditorId;
+          await openAbsoluteInEditor(absolutePath, editorId);
+          return;
+        }
+        if (clicked === "copy-name") {
+          await copyText(basename, "Name");
+          return;
+        }
+        if (clicked === "copy-relative") {
+          await copyText(relativePath, "Relative path");
+          return;
+        }
+        if (clicked === "copy-full") {
+          await copyText(absolutePath, "Full path");
+          return;
+        }
+        if (clicked === "copy-contents") {
+          try {
+            const result = await readProjectFile({
+              environmentId,
+              input: { cwd, relativePath },
+            });
+            if (result._tag !== "Success") {
+              const error = squashAtomCommandFailure(result);
+              toastManager.add({
+                type: "error",
+                title: "Unable to copy contents",
+                description: error instanceof Error ? error.message : "An error occurred.",
+              });
+              return;
+            }
+            await copyText(result.value.contents, "Contents");
+          } catch (cause) {
+            toastManager.add({
+              type: "error",
+              title: "Unable to copy contents",
+              description: cause instanceof Error ? cause.message : "An error occurred.",
+            });
+          }
+          return;
+        }
+        if (clicked === "reveal") {
+          const reveal = api.shell.showItemInFolder ?? window.desktopBridge?.showItemInFolder;
+          if (!reveal) {
+            toastManager.add({
+              type: "error",
+              title: `Unable to ${revealLabel.toLowerCase()}`,
+              description: "This action is only available in the desktop app.",
+            });
+            return;
+          }
+          try {
+            await reveal(absolutePath);
+          } catch (cause) {
+            toastManager.add({
+              type: "error",
+              title: `Unable to ${revealLabel.toLowerCase()}`,
+              description: cause instanceof Error ? cause.message : "An error occurred.",
+            });
+          }
+          return;
+        }
+        if (clicked === "copy-mention") {
+          await copyText(mention, "Mention");
+          return;
+        }
+        if (clicked === "add-to-chat") {
+          const composer = composerRef?.current;
+          if (!composer) {
+            toastManager.add({
+              type: "error",
+              title: "Unable to add to chat",
+              description: "Open a chat for this project and try again.",
+            });
+            return;
+          }
+          const inserted = composer.insertTextAtEnd(`${mention} `, { ensureLeadingBoundary: true });
+          if (!inserted) {
+            toastManager.add({
+              type: "error",
+              title: "Unable to add to chat",
+              description: "The chat isn't ready to accept input right now.",
+            });
+          }
+        }
+      } finally {
+        context.close();
+      }
+    },
+    [
+      availableEditors,
+      canRevealInFolder,
+      composerRef,
+      copyText,
+      cwd,
+      environmentId,
+      onOpenFile,
+      openAbsoluteInEditor,
+      readProjectFile,
+      revealLabel,
+    ],
+  );
   const showEntryContextMenuRef = useRef(showEntryContextMenu);
   useEffect(() => {
     showEntryContextMenuRef.current = showEntryContextMenu;

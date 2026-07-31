@@ -480,7 +480,7 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
   const isInFlight = status === "working" || status === "approval" || status === "input";
   const shouldRecede =
     (status === "ready" || isInFlight) && !isUnread && !isWoke && !props.isActive && !isSelected;
-  // Status hues: working = electric violet (spin + glow); done = electric blue.
+  // Status hues: working = electric violet (spin + glow); done = neon emerald + soft glow.
   // Approval / input / failed keep the shared amber / indigo / red convention.
   const topStatus =
     status === "working"
@@ -518,7 +518,7 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
                 ? {
                     label: "Done",
                     icon: "done" as const,
-                    className: "text-emerald-700 dark:text-emerald-300",
+                    className: "text-emerald-500 dark:text-emerald-400",
                   }
                 : null;
 
@@ -969,7 +969,10 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
                           <CircleDashedIcon className="size-4 animate-electric-spin motion-reduce:animate-none" />
                         </span>
                       ) : topStatus.icon === "done" ? (
-                        <CircleCheckIcon aria-hidden className="size-4 shrink-0" />
+                        <CircleCheckIcon
+                          aria-hidden
+                          className="size-4 shrink-0 text-emerald-400 [filter:drop-shadow(0_0_4px_rgb(52_211_153/0.7))_drop-shadow(0_0_10px_rgb(16_185_129/0.4))]"
+                        />
                       ) : topStatus.icon === "woke" ? (
                         <AlarmClockIcon aria-hidden className="size-4 shrink-0" />
                       ) : null}

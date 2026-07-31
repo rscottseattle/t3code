@@ -8,6 +8,7 @@ import {
   type OrchestrationProposedPlanId,
   CheckpointRef,
   isToolLifecycleItemType,
+  ProviderInstanceId,
   ThreadId,
   type ThreadTokenUsageSnapshot,
   TurnId,
@@ -31,6 +32,11 @@ import { ProviderService } from "../../provider/Services/ProviderService.ts";
 import { ProjectionTurnRepository } from "../../persistence/Services/ProjectionTurns.ts";
 import { ProjectionTurnRepositoryLive } from "../../persistence/Layers/ProjectionTurns.ts";
 import { isGitRepository } from "../../git/Utils.ts";
+import {
+  getAccountUsageSnapshot,
+  publishAccountUsageProvider,
+} from "../../accountUsage/AccountUsageHub.ts";
+import { normalizeRateLimitPayload } from "../../accountUsage/normalizeAccountUsage.ts";
 import { OrchestrationEngineService } from "../Services/OrchestrationEngine.ts";
 import { ProjectionSnapshotQuery } from "../Services/ProjectionSnapshotQuery.ts";
 import {
@@ -1292,6 +1298,28 @@ const make = Effect.gen(function* () {
 
   const processRuntimeEvent = (event: ProviderRuntimeEvent) =>
     Effect.gen(function* () {
+      // Soft-fork: plan usage windows are account-level. Capture them even
+      // when the thread shell is missing so the sidebar meter stays warm.
+      if (event.type === "account.rate-limits.updated") {
+        const instanceId =
+          event.providerInstanceId ?? ProviderInstanceId.make(String(event.provider));
+        const existing = getAccountUsageSnapshot().providers.find(
+          (entry) =>
+            entry.providerInstanceId === instanceId ||
+            (event.providerInstanceId === undefined && entry.provider === event.provider),
+        );
+        const normalized = normalizeRateLimitPayload({
+          provider: event.provider,
+          providerInstanceId: instanceId,
+          payload: event.payload,
+          updatedAt: event.createdAt,
+          existing: existing ?? null,
+        });
+        if (normalized) {
+          publishAccountUsageProvider(normalized);
+        }
+      }
+
       const thread = yield* resolveThreadShell(event.threadId);
       if (!thread) return;
 

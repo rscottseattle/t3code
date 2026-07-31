@@ -32,11 +32,13 @@ function createBrowserLocalApi(): LocalApi {
 
         window.open(url, "_blank", "noopener,noreferrer");
       },
-      showItemInFolder: window.desktopBridge?.showItemInFolder
-        ? async (path) => {
-            await window.desktopBridge?.showItemInFolder?.(path);
+      ...(window.desktopBridge?.showItemInFolder
+        ? {
+            showItemInFolder: async (path: string) => {
+              await window.desktopBridge?.showItemInFolder?.(path);
+            },
           }
-        : undefined,
+        : {}),
     },
     contextMenu: {
       show: async <T extends string>(
