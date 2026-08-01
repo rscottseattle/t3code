@@ -27,6 +27,7 @@ import {
   toastManager,
 } from "../components/ui/toast";
 import { resolveAndPersistPreferredEditor } from "../editorPreferences";
+import { useMarkLiveCompletedThreadsUnread } from "../hooks/useMarkLiveCompletedThreadsUnread";
 import { useClientSettings } from "../hooks/useSettings";
 import {
   deriveLogicalProjectKeyFromSettings,
@@ -134,6 +135,7 @@ function RootRouteView() {
         <SshPasswordPromptDialog />
         <SlowRpcRequestToastCoordinator />
         <HostedStaticEnvironmentBootstrap />
+        <CompletedThreadUnreadTracker />
         {primaryEnvironmentAuthenticated ? <EventRouter /> : null}
         {primaryEnvironmentAuthenticated ? <ProviderUpdateLaunchNotification /> : null}
         {appShell}
@@ -149,6 +151,11 @@ function GlassAppearanceSync() {
     document.documentElement.style.setProperty("--glass-opacity", `${glassOpacity}%`);
   }, [glassOpacity]);
 
+  return null;
+}
+
+function CompletedThreadUnreadTracker() {
+  useMarkLiveCompletedThreadsUnread();
   return null;
 }
 

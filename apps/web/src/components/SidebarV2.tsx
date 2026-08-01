@@ -119,6 +119,7 @@ import {
   firstValidTimestampMs,
   hasUnseenCompletion,
   isTrailingDoubleClick,
+  markThreadSummaryUnread,
   orderItemsByPreferredIds,
   resolveAdjacentThreadId,
   resolveSettledTimestamp,
@@ -456,6 +457,9 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
   const isRegeneratingTitle = thread.titleRegeneration != null;
   const lastVisitedAt = useUiStateStore((state) => state.threadLastVisitedAtById[threadKey]);
   const threadFlag = useUiStateStore((state) => state.threadFlagById[threadKey] ?? null);
+  const isExplicitlyUnread = useUiStateStore(
+    (state) => state.threadExplicitlyUnreadById[threadKey] === true,
+  );
   const isSelected = useThreadSelectionStore((state) => state.selectedThreadKeys.has(threadKey));
   const openPrLink = useOpenPrLink();
   const runningTerminalIds = useThreadRunningTerminalIds({
@@ -466,8 +470,9 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
   const terminalProcessCount = runningTerminalIds.length;
 
   // Same semantics as v1 (never-visited counts as read): flipping the beta
-  // flag must not light up every historical thread as unread.
-  const isUnread = hasUnseenCompletion({ ...thread, lastVisitedAt });
+  // flag must not light up every historical thread as unread. Explicit pins
+  // from Mark unread / live completion always show attention.
+  const isUnread = hasUnseenCompletion({ ...thread, lastVisitedAt, isExplicitlyUnread });
   const status = resolveSidebarV2Status(thread);
   // A woken thread reappears at its original position (the sort is
   // deliberately static), so the pill has to carry the weight. Snoozing is
@@ -2287,7 +2292,7 @@ export default function SidebarV2() {
       if (clicked.value === "mark-unread") {
         for (const threadKey of threadKeys) {
           const thread = threadByKeyRef.current.get(threadKey);
-          markThreadUnread(threadKey, thread?.latestTurn?.completedAt);
+          markThreadSummaryUnread({ threadKey, thread, markThreadUnread });
         }
         clearSelection();
         return;
@@ -2506,7 +2511,7 @@ export default function SidebarV2() {
             return;
           }
           case "mark-unread":
-            markThreadUnread(threadKey, thread.latestTurn?.completedAt);
+            markThreadSummaryUnread({ threadKey, thread, markThreadUnread });
             return;
           case "copy-path":
             if (!threadWorkspacePath) {

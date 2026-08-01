@@ -2,6 +2,7 @@ import { ProjectId, ThreadId } from "@t3tools/contracts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import {
+  clearThreadExplicitUnread,
   legacyProjectCwdPreferenceKey,
   markThreadUnread,
   markThreadVisited,
@@ -24,6 +25,7 @@ function makeUiState(overrides: Partial<UiState> = {}): UiState {
     projectOrder: [],
     threadLastVisitedAtById: {},
     threadFlagById: {},
+    threadExplicitlyUnreadById: {},
     threadChangedFilesExpandedById: {},
     defaultAdvertisedEndpointKey: null,
     ...overrides,
@@ -52,7 +54,38 @@ describe("uiStateStore pure functions", () => {
     const next = markThreadUnread(initialState, threadId, "2026-02-25T12:30:00.000Z");
 
     expect(next.threadLastVisitedAtById[threadId]).toBe("2026-02-25T12:29:59.999Z");
+    expect(next.threadExplicitlyUnreadById[threadId]).toBe(true);
+    // Already pinned; a second mark without a completion timestamp is a no-op.
     expect(markThreadUnread(next, threadId, null)).toBe(next);
+  });
+
+  it("pins explicit unread even without a completion timestamp", () => {
+    const threadId = ThreadId.make("thread-1");
+    const initialState = makeUiState();
+
+    const next = markThreadUnread(initialState, threadId, null);
+
+    expect(next.threadLastVisitedAtById[threadId]).toBeUndefined();
+    expect(next.threadExplicitlyUnreadById[threadId]).toBe(true);
+  });
+
+  it("keeps explicit unread when visit tracking advances past the backdated timestamp", () => {
+    const threadId = ThreadId.make("thread-1");
+    const unread = markThreadUnread(makeUiState(), threadId, "2026-02-25T12:30:00.000Z");
+    // ChatView would re-visit with updatedAt after mark-unread on the open thread.
+    const visited = markThreadVisited(unread, threadId, "2026-02-25T12:30:00.500Z");
+
+    expect(visited.threadLastVisitedAtById[threadId]).toBe("2026-02-25T12:30:00.500Z");
+    expect(visited.threadExplicitlyUnreadById[threadId]).toBe(true);
+  });
+
+  it("clears explicit unread when the user opens the thread", () => {
+    const threadId = ThreadId.make("thread-1");
+    const unread = markThreadUnread(makeUiState(), threadId, "2026-02-25T12:30:00.000Z");
+    const cleared = clearThreadExplicitUnread(unread, threadId);
+
+    expect(cleared.threadExplicitlyUnreadById[threadId]).toBeUndefined();
+    expect(clearThreadExplicitUnread(cleared, threadId)).toBe(cleared);
   });
 
   it("resolves project expansion from logical, physical, and legacy preference keys", () => {
@@ -201,6 +234,7 @@ describe("parsePersistedState", () => {
       threadFlagById: {
         "environment:thread-1": "red",
       },
+      threadExplicitlyUnreadById: {},
       defaultAdvertisedEndpointKey: "desktop-core:lan:http",
       threadChangedFilesExpandedById: {
         "environment:thread-1": {
@@ -321,6 +355,7 @@ describe("uiStateStore persistence", () => {
         "environment:thread-1": "2026-02-25T12:35:00.000Z",
       },
       threadFlagById: {},
+      threadExplicitlyUnreadById: {},
       defaultAdvertisedEndpointKey: "desktop-core:lan:http",
       threadChangedFilesExpansionVersion: 1,
       threadChangedFilesExpandedById: {

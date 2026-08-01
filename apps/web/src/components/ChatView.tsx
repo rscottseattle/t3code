@@ -1220,6 +1220,7 @@ function ChatViewContent(props: ChatViewProps) {
   );
   const activeServerThread = serverThread ?? loadingServerThread;
   const markThreadVisited = useUiStateStore((store) => store.markThreadVisited);
+  const clearThreadExplicitUnread = useUiStateStore((store) => store.clearThreadExplicitUnread);
   const activeThreadLastVisitedAt = useUiStateStore(
     (store) => store.threadLastVisitedAtById[routeThreadKey],
   );
@@ -1840,6 +1841,17 @@ function ChatViewContent(props: ChatViewProps) {
     },
     [openOrReuseProjectDraftThread],
   );
+
+  // Opening a thread clears a manual/auto unread pin. Visit tracking still
+  // advances with updatedAt while the user stays on the thread, so a fresh
+  // completion while watching does not flash Done — but Mark unread pins
+  // explicitly and survives that visit tracking until the next open.
+  useEffect(() => {
+    if (!serverThread?.id) return;
+    clearThreadExplicitUnread(
+      scopedThreadKey(scopeThreadRef(serverThread.environmentId, serverThread.id)),
+    );
+  }, [clearThreadExplicitUnread, serverThread?.environmentId, serverThread?.id]);
 
   useEffect(() => {
     if (!serverThread?.id) return;
@@ -4717,7 +4729,7 @@ function ChatViewContent(props: ChatViewProps) {
     });
     const turnAttachmentsPromise = Promise.all(
       composerImagesSnapshot.map(async (image) => ({
-        type: "image" as const,
+        type: image.type,
         name: image.name,
         mimeType: image.mimeType,
         sizeBytes: image.sizeBytes,
@@ -4725,7 +4737,7 @@ function ChatViewContent(props: ChatViewProps) {
       })),
     );
     const optimisticAttachments = composerImagesSnapshot.map((image) => ({
-      type: "image" as const,
+      type: image.type,
       id: image.id,
       name: image.name,
       mimeType: image.mimeType,

@@ -23,6 +23,8 @@ export interface PersistedUiState {
   projectOrder?: string[];
   threadLastVisitedAtById?: Record<string, string>;
   threadFlagById?: Record<string, ThreadFlagColor>;
+  /** Manual/auto unread pins that survive active-thread visit tracking. */
+  threadExplicitlyUnreadById?: Record<string, boolean>;
   collapsedProjectCwds?: string[];
   expandedProjectCwds?: string[];
   projectOrderCwds?: string[];
@@ -39,6 +41,7 @@ export interface UiProjectState {
 export interface UiThreadState {
   threadLastVisitedAtById: Record<string, string>;
   threadFlagById: Record<string, ThreadFlagColor>;
+  threadExplicitlyUnreadById: Record<string, boolean>;
   threadChangedFilesExpandedById: Record<string, Record<string, boolean>>;
 }
 
@@ -53,6 +56,7 @@ const initialState: UiState = {
   projectOrder: [],
   threadLastVisitedAtById: {},
   threadFlagById: {},
+  threadExplicitlyUnreadById: {},
   threadChangedFilesExpandedById: {},
   defaultAdvertisedEndpointKey: null,
 };
@@ -131,6 +135,7 @@ export function parsePersistedState(parsed: PersistedUiState): UiState {
     projectOrder,
     threadLastVisitedAtById: sanitizeTimestampRecord(parsed.threadLastVisitedAtById),
     threadFlagById: sanitizeThreadFlagRecord(parsed.threadFlagById),
+    threadExplicitlyUnreadById: sanitizeBooleanRecord(parsed.threadExplicitlyUnreadById),
     threadChangedFilesExpandedById:
       parsed.threadChangedFilesExpansionVersion === THREAD_CHANGED_FILES_EXPANSION_VERSION
         ? sanitizePersistedThreadChangedFilesExpanded(parsed.threadChangedFilesExpandedById)
@@ -210,6 +215,7 @@ export function persistState(state: UiState): void {
         projectOrder: state.projectOrder,
         threadLastVisitedAtById: state.threadLastVisitedAtById,
         threadFlagById: state.threadFlagById,
+        threadExplicitlyUnreadById: state.threadExplicitlyUnreadById,
         defaultAdvertisedEndpointKey: state.defaultAdvertisedEndpointKey,
         threadChangedFilesExpansionVersion: THREAD_CHANGED_FILES_EXPANSION_VERSION,
         threadChangedFilesExpandedById: state.threadChangedFilesExpandedById,
@@ -251,28 +257,58 @@ export function markThreadVisited(state: UiState, threadId: string, visitedAt: s
   };
 }
 
+/**
+ * Marks a thread unread for sidebar attention (Done / Completed).
+ *
+ * Always pins an explicit unread flag so the active-thread visit tracker in
+ * ChatView cannot immediately wipe the marker. When a completion timestamp is
+ * available, also backdate lastVisitedAt so completion-based checks agree.
+ */
 export function markThreadUnread(
   state: UiState,
   threadId: string,
   latestTurnCompletedAt: string | null | undefined,
 ): UiState {
-  if (!latestTurnCompletedAt) {
+  let next: UiState = state;
+
+  if (latestTurnCompletedAt) {
+    const latestTurnCompletedAtMs = Date.parse(latestTurnCompletedAt);
+    if (!Number.isNaN(latestTurnCompletedAtMs)) {
+      const unreadVisitedAt = new Date(latestTurnCompletedAtMs - 1).toISOString();
+      if (state.threadLastVisitedAtById[threadId] !== unreadVisitedAt) {
+        next = {
+          ...next,
+          threadLastVisitedAtById: {
+            ...next.threadLastVisitedAtById,
+            [threadId]: unreadVisitedAt,
+          },
+        };
+      }
+    }
+  }
+
+  if (next.threadExplicitlyUnreadById[threadId]) {
+    return next;
+  }
+
+  return {
+    ...next,
+    threadExplicitlyUnreadById: {
+      ...next.threadExplicitlyUnreadById,
+      [threadId]: true,
+    },
+  };
+}
+
+/** Clears a manual/auto unread pin when the user opens the thread. */
+export function clearThreadExplicitUnread(state: UiState, threadId: string): UiState {
+  if (!state.threadExplicitlyUnreadById[threadId]) {
     return state;
   }
-  const latestTurnCompletedAtMs = Date.parse(latestTurnCompletedAt);
-  if (Number.isNaN(latestTurnCompletedAtMs)) {
-    return state;
-  }
-  const unreadVisitedAt = new Date(latestTurnCompletedAtMs - 1).toISOString();
-  if (state.threadLastVisitedAtById[threadId] === unreadVisitedAt) {
-    return state;
-  }
+  const { [threadId]: _removed, ...threadExplicitlyUnreadById } = state.threadExplicitlyUnreadById;
   return {
     ...state,
-    threadLastVisitedAtById: {
-      ...state.threadLastVisitedAtById,
-      [threadId]: unreadVisitedAt,
-    },
+    threadExplicitlyUnreadById,
   };
 }
 
@@ -423,6 +459,7 @@ interface UiStateStore extends UiState {
   markThreadVisited: (threadId: string, visitedAt: string) => void;
   markThreadUnread: (threadId: string, latestTurnCompletedAt: string | null | undefined) => void;
   setThreadFlag: (threadId: string, flag: ThreadFlagColor | null) => void;
+  clearThreadExplicitUnread: (threadId: string) => void;
   setThreadChangedFilesExpanded: (threadId: string, turnId: string, expanded: boolean) => void;
   setDefaultAdvertisedEndpointKey: (key: string | null) => void;
   setProjectExpanded: (projectIds: string | readonly string[], expanded: boolean) => void;
@@ -440,6 +477,8 @@ export const useUiStateStore = create<UiStateStore>((set) => ({
   markThreadUnread: (threadId, latestTurnCompletedAt) =>
     set((state) => markThreadUnread(state, threadId, latestTurnCompletedAt)),
   setThreadFlag: (threadId, flag) => set((state) => setThreadFlag(state, threadId, flag)),
+  clearThreadExplicitUnread: (threadId) =>
+    set((state) => clearThreadExplicitUnread(state, threadId)),
   setThreadChangedFilesExpanded: (threadId, turnId, expanded) =>
     set((state) => setThreadChangedFilesExpanded(state, threadId, turnId, expanded)),
   setDefaultAdvertisedEndpointKey: (key) =>

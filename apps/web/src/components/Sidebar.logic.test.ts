@@ -13,7 +13,9 @@ import {
   hasUnseenCompletion,
   isContextMenuPointerDown,
   isTrailingDoubleClick,
+  markThreadSummaryUnread,
   orderItemsByPreferredIds,
+  resolveThreadCompletionAt,
   resolveProjectStatusIndicator,
   resolveSidebarStageBadgeLabel,
   resolveThreadRowClassName,
@@ -270,6 +272,30 @@ describe("hasUnseenCompletion", () => {
     ).toBe(true);
   });
 
+  it("uses the settled session timestamp when the completed turn was compacted from the shell", () => {
+    expect(
+      hasUnseenCompletion({
+        hasActionableProposedPlan: false,
+        hasPendingApprovals: false,
+        hasPendingUserInput: false,
+        interactionMode: "default",
+        latestTurn: null,
+        latestUserMessageAt: "2026-03-09T10:00:00.000Z",
+        lastVisitedAt: "2026-03-09T10:04:00.000Z",
+        session: {
+          threadId: ThreadId.make("thread-1"),
+          status: "ready",
+          providerName: "Codex",
+          providerInstanceId: ProviderInstanceId.make("codex"),
+          runtimeMode: DEFAULT_RUNTIME_MODE,
+          activeTurnId: null,
+          lastError: null,
+          updatedAt: "2026-03-09T10:05:00.000Z",
+        },
+      }),
+    ).toBe(true);
+  });
+
   it("treats a missing client visit marker as read", () => {
     expect(
       hasUnseenCompletion({
@@ -282,6 +308,89 @@ describe("hasUnseenCompletion", () => {
         session: null,
       }),
     ).toBe(false);
+  });
+
+  it("returns true when explicitly pinned unread, even without a completion timestamp", () => {
+    expect(
+      hasUnseenCompletion({
+        hasActionableProposedPlan: false,
+        hasPendingApprovals: false,
+        hasPendingUserInput: false,
+        interactionMode: "default",
+        latestTurn: null,
+        lastVisitedAt: "2026-03-09T10:10:00.000Z",
+        session: null,
+        isExplicitlyUnread: true,
+      }),
+    ).toBe(true);
+  });
+});
+
+describe("markThreadSummaryUnread", () => {
+  it("uses the settled session timestamp when the completed turn is absent", () => {
+    const markThreadUnread = vi.fn();
+
+    markThreadSummaryUnread({
+      threadKey: "environment-1:thread-1",
+      thread: {
+        hasActionableProposedPlan: false,
+        hasPendingApprovals: false,
+        hasPendingUserInput: false,
+        interactionMode: "default",
+        latestTurn: null,
+        latestUserMessageAt: "2026-03-09T10:00:00.000Z",
+        session: {
+          threadId: ThreadId.make("thread-1"),
+          status: "ready",
+          providerName: "Codex",
+          providerInstanceId: ProviderInstanceId.make("codex"),
+          runtimeMode: DEFAULT_RUNTIME_MODE,
+          activeTurnId: null,
+          lastError: null,
+          updatedAt: "2026-03-09T10:05:00.000Z",
+        },
+      },
+      markThreadUnread,
+    });
+
+    expect(markThreadUnread).toHaveBeenCalledWith(
+      "environment-1:thread-1",
+      "2026-03-09T10:05:00.000Z",
+    );
+  });
+
+  it("still marks unread when no completion timestamp is available", () => {
+    const markThreadUnread = vi.fn();
+
+    markThreadSummaryUnread({
+      threadKey: "environment-1:thread-1",
+      thread: {
+        hasActionableProposedPlan: false,
+        hasPendingApprovals: false,
+        hasPendingUserInput: false,
+        interactionMode: "default",
+        latestTurn: null,
+        session: null,
+      },
+      markThreadUnread,
+    });
+
+    expect(markThreadUnread).toHaveBeenCalledWith("environment-1:thread-1", null);
+  });
+});
+
+describe("resolveThreadCompletionAt", () => {
+  it("prefers latestTurn.completedAt when present", () => {
+    expect(
+      resolveThreadCompletionAt({
+        hasActionableProposedPlan: false,
+        hasPendingApprovals: false,
+        hasPendingUserInput: false,
+        interactionMode: "default",
+        latestTurn: makeLatestTurn(),
+        session: null,
+      }),
+    ).toBe("2026-03-09T10:05:00.000Z");
   });
 });
 

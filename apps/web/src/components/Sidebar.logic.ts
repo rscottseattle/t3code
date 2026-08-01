@@ -144,7 +144,10 @@ type ThreadStatusInput = Pick<
   | "latestTurn"
   | "session"
 > & {
+  latestUserMessageAt?: string | null | undefined;
   lastVisitedAt?: string | undefined;
+  /** Manual/auto unread pin that outranks visit-timestamp comparison. */
+  isExplicitlyUnread?: boolean | undefined;
 };
 
 export interface ThreadJumpHintVisibilityController {
@@ -239,10 +242,53 @@ export function useThreadJumpHintVisibility(): {
   };
 }
 
+/**
+ * Best available "agent finished" timestamp for unread/Done.
+ * Prefers latestTurn.completedAt; falls back to a ready/idle session update
+ * that landed after the latest user message (turn projection can lag/compact).
+ */
+export function resolveThreadCompletionAt(thread: ThreadStatusInput): string | null {
+  if (thread.latestTurn?.completedAt) {
+    const latestTurnCompletedAt = Date.parse(thread.latestTurn.completedAt);
+    if (Number.isFinite(latestTurnCompletedAt)) return thread.latestTurn.completedAt;
+  }
+
+  if (thread.session?.status !== "ready" && thread.session?.status !== "idle") return null;
+  if (!thread.latestUserMessageAt) return null;
+
+  const sessionUpdatedAt = Date.parse(thread.session.updatedAt);
+  const latestUserMessageAt = Date.parse(thread.latestUserMessageAt);
+  if (
+    !Number.isFinite(sessionUpdatedAt) ||
+    !Number.isFinite(latestUserMessageAt) ||
+    sessionUpdatedAt < latestUserMessageAt
+  ) {
+    return null;
+  }
+  return thread.session.updatedAt;
+}
+
+export function markThreadSummaryUnread(input: {
+  readonly threadKey: string;
+  readonly thread: ThreadStatusInput | null | undefined;
+  readonly markThreadUnread: (threadKey: string, completionAt: string | null | undefined) => void;
+}): void {
+  if (!input.thread) {
+    input.markThreadUnread(input.threadKey, null);
+    return;
+  }
+  input.markThreadUnread(input.threadKey, resolveThreadCompletionAt(input.thread));
+}
+
 export function hasUnseenCompletion(thread: ThreadStatusInput): boolean {
-  if (!thread.latestTurn?.completedAt) return false;
-  const completedAt = Date.parse(thread.latestTurn.completedAt);
+  if (thread.isExplicitlyUnread) return true;
+
+  const completionAt = resolveThreadCompletionAt(thread);
+  if (!completionAt) return false;
+  const completedAt = Date.parse(completionAt);
   if (Number.isNaN(completedAt)) return false;
+  // Never-visited historical threads stay read so flipping sidebar modes
+  // does not light up the whole archive.
   if (!thread.lastVisitedAt) return false;
 
   const lastVisitedAt = Date.parse(thread.lastVisitedAt);
