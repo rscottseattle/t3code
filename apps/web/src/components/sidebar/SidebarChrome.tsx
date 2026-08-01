@@ -188,7 +188,7 @@ export const SidebarChromeFooter = memo(function SidebarChromeFooter() {
   }, [upstreamUpdating]);
 
   return (
-    <SidebarFooter className="p-2">
+    <SidebarFooter className="p-[var(--sidebar-content-inset)]">
       <SidebarProviderUpdatePill />
       <SidebarUpdatePill />
       <SidebarAccountUsage />

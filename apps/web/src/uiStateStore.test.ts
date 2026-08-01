@@ -14,6 +14,7 @@ import {
   setDefaultAdvertisedEndpointKey,
   setProjectExpanded,
   setThreadChangedFilesExpanded,
+  setThreadFlag,
   type UiState,
 } from "./uiStateStore";
 
@@ -22,6 +23,7 @@ function makeUiState(overrides: Partial<UiState> = {}): UiState {
     projectExpandedById: {},
     projectOrder: [],
     threadLastVisitedAtById: {},
+    threadFlagById: {},
     threadChangedFilesExpandedById: {},
     defaultAdvertisedEndpointKey: null,
     ...overrides,
@@ -144,6 +146,21 @@ describe("uiStateStore pure functions", () => {
       defaultAdvertisedEndpointKey: null,
     });
   });
+
+  it("sets and clears personal thread flags without identity churn", () => {
+    const threadKey = "environment:thread-1";
+    const flagged = setThreadFlag(makeUiState(), threadKey, "red");
+
+    expect(flagged.threadFlagById).toEqual({ [threadKey]: "red" });
+    expect(setThreadFlag(flagged, threadKey, "red")).toBe(flagged);
+
+    const recolored = setThreadFlag(flagged, threadKey, "blue");
+    expect(recolored.threadFlagById).toEqual({ [threadKey]: "blue" });
+
+    const cleared = setThreadFlag(recolored, threadKey, null);
+    expect(cleared.threadFlagById).toEqual({});
+    expect(setThreadFlag(cleared, threadKey, null)).toBe(cleared);
+  });
 });
 
 describe("parsePersistedState", () => {
@@ -157,6 +174,11 @@ describe("parsePersistedState", () => {
       threadLastVisitedAtById: {
         "environment:thread-1": "2026-02-25T12:35:00.000Z",
         invalid: "not-a-date",
+      },
+      threadFlagById: {
+        "environment:thread-1": "red",
+        "environment:thread-2": "not-a-color" as "red",
+        "": "blue",
       },
       defaultAdvertisedEndpointKey: "desktop-core:lan:http",
       threadChangedFilesExpansionVersion: 1,
@@ -175,6 +197,9 @@ describe("parsePersistedState", () => {
       projectOrder: ["physical-b", "physical-a"],
       threadLastVisitedAtById: {
         "environment:thread-1": "2026-02-25T12:35:00.000Z",
+      },
+      threadFlagById: {
+        "environment:thread-1": "red",
       },
       defaultAdvertisedEndpointKey: "desktop-core:lan:http",
       threadChangedFilesExpandedById: {
@@ -295,6 +320,7 @@ describe("uiStateStore persistence", () => {
       threadLastVisitedAtById: {
         "environment:thread-1": "2026-02-25T12:35:00.000Z",
       },
+      threadFlagById: {},
       defaultAdvertisedEndpointKey: "desktop-core:lan:http",
       threadChangedFilesExpansionVersion: 1,
       threadChangedFilesExpandedById: {
