@@ -23,6 +23,7 @@ import {
   CircleDashedIcon,
   ClockIcon,
   CopyIcon,
+  FlagIcon,
   FolderIcon,
   FolderPlusIcon,
   GitBranchIcon,
@@ -82,6 +83,12 @@ import {
   type SidebarProjectSnapshot,
 } from "../sidebarProjectGrouping";
 import { legacyProjectCwdPreferenceKey, useUiStateStore } from "../uiStateStore";
+import {
+  buildThreadFlagContextMenuItems,
+  parseThreadFlagMenuId,
+  THREAD_FLAG_GRADIENT_CLASS,
+  THREAD_FLAG_ICON_CLASS,
+} from "../threadFlags";
 import { useThreadSelectionStore } from "../threadSelectionStore";
 import { useThreadActions } from "../hooks/useThreadActions";
 import { useHandleNewThread } from "../hooks/useHandleNewThread";
@@ -447,6 +454,7 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
   const threadKey = scopedThreadKey(threadRef);
   const isRegeneratingTitle = thread.titleRegeneration != null;
   const lastVisitedAt = useUiStateStore((state) => state.threadLastVisitedAtById[threadKey]);
+  const threadFlag = useUiStateStore((state) => state.threadFlagById[threadKey] ?? null);
   const isSelected = useThreadSelectionStore((state) => state.selectedThreadKeys.has(threadKey));
   const openPrLink = useOpenPrLink();
   const runningTerminalIds = useThreadRunningTerminalIds({
@@ -706,6 +714,28 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
       !isSelected &&
       "opacity-70 transition-opacity hover:opacity-100",
   );
+  // Soft left-edge wash sits above the row surface so flagged threads stay
+  // obvious without fighting active/selected fills or status colors.
+  const flagWash =
+    threadFlag === null ? null : (
+      <span
+        aria-hidden
+        data-testid="sidebar-v2-flag-wash"
+        className={cn(
+          "pointer-events-none absolute inset-0 rounded-md",
+          THREAD_FLAG_GRADIENT_CLASS[threadFlag],
+        )}
+      />
+    );
+  const flagMark =
+    threadFlag === null ? null : (
+      <FlagIcon
+        aria-hidden
+        data-testid="sidebar-v2-flag-icon"
+        data-flag-color={threadFlag}
+        className={cn("size-3 shrink-0 fill-current", THREAD_FLAG_ICON_CLASS[threadFlag])}
+      />
+    );
 
   const title = isRenaming ? (
     <input
@@ -802,11 +832,12 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
               />
             }
           >
+            {flagWash}
             {/* Settled history recedes: dimmed favicon at rest, restored on
               hover so the tail stays scannable when you're hunting. */}
             <span
               className={cn(
-                "shrink-0 transition-opacity",
+                "relative z-10 shrink-0 transition-opacity",
                 !props.isActive &&
                   "opacity-40 grayscale group-hover/v2-row:opacity-100 group-hover/v2-row:grayscale-0",
               )}
@@ -818,8 +849,11 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
                 fallbackIcon={MessageSquareIcon}
               />
             </span>
-            {title}
-            {terminalStatusIcon}
+            {flagMark ? <span className="relative z-10 shrink-0">{flagMark}</span> : null}
+            <span className="relative z-10 min-w-0 flex-1">{title}</span>
+            {terminalStatusIcon ? (
+              <span className="relative z-10">{terminalStatusIcon}</span>
+            ) : null}
             {isRegeneratingTitle ? (
               <span role="status" className="sr-only">
                 Regenerating title
@@ -828,8 +862,8 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
             {/* The PR badge stays outside the hover-fading slot: it must
               remain visible AND clickable while the row is hovered. Only
               the time/jump label yields to the settle affordance. */}
-            {prBadge}
-            <span className="relative ml-auto flex h-6 min-w-8 shrink-0 items-center justify-end">
+            {prBadge ? <span className="relative z-10">{prBadge}</span> : null}
+            <span className="relative z-10 ml-auto flex h-6 min-w-8 shrink-0 items-center justify-end">
               <span className="inline-flex justify-end tabular-nums text-muted-foreground/55 transition-opacity group-hover/v2-row:opacity-0">
                 {variantAction === "unsnooze" && props.snoozeWakeLabelText !== null ? (
                   // Snoozed rows show when they come BACK, not when they were
@@ -918,6 +952,7 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
             />
           }
         >
+          {flagWash}
           <div className="relative z-10 h-[4.875rem] px-[var(--sidebar-row-content-inset)] py-[var(--sidebar-content-inset)]">
             <div className="flex h-5 min-w-0 items-center gap-1.5">
               <ProjectFavicon
@@ -925,6 +960,7 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
                 cwd={props.projectCwd ?? ""}
                 className="size-4 shrink-0"
               />
+              {flagMark}
               {props.projectTitle ? (
                 <span
                   className={cn(
@@ -1244,6 +1280,8 @@ export default function SidebarV2() {
   const toggleThreadSelection = useThreadSelectionStore((s) => s.toggleThread);
   const rangeSelectTo = useThreadSelectionStore((s) => s.rangeSelectTo);
   const markThreadUnread = useUiStateStore((s) => s.markThreadUnread);
+  const setThreadFlag = useUiStateStore((s) => s.setThreadFlag);
+  const threadFlagById = useUiStateStore((s) => s.threadFlagById);
   const routeTarget = useParams({
     strict: false,
     select: (params) => resolveThreadRouteTarget(params),
@@ -1371,6 +1409,8 @@ export default function SidebarV2() {
   // Project scope: one menu above the list. Scoping filters the list without
   // making the header width depend on the number or length of project names.
   const [projectScopeKey, setProjectScopeKey] = useState<string | null>(null);
+  // Flag filter: personal priority only — show threads that have any color flag.
+  const [flagFilterActive, setFlagFilterActive] = useState(false);
   const scopedProjectGroup = useMemo(
     () =>
       projectScopeKey === null
@@ -1399,6 +1439,9 @@ export default function SidebarV2() {
   useEffect(() => {
     clearSelection();
   }, [clearSelection, projectScopeKey]);
+  useEffect(() => {
+    clearSelection();
+  }, [clearSelection, flagFilterActive]);
 
   const handleRemoveProjectMembers = useCallback(
     async (projectGroup: SidebarProjectSnapshot, members: readonly SidebarProjectGroupMember[]) => {
@@ -1565,12 +1608,20 @@ export default function SidebarV2() {
     // memo exactly at the next wake boundary.
     void snoozeWakeTick;
     const preciseNow = new Date().toISOString();
-    const visible = threads.filter(
-      (thread) =>
-        thread.archivedAt === null &&
-        (scopedProjectKeys === null ||
-          scopedProjectKeys.has(`${thread.environmentId}:${thread.projectId}`)),
-    );
+    const visible = threads.filter((thread) => {
+      if (thread.archivedAt !== null) return false;
+      if (
+        scopedProjectKeys !== null &&
+        !scopedProjectKeys.has(`${thread.environmentId}:${thread.projectId}`)
+      ) {
+        return false;
+      }
+      if (flagFilterActive) {
+        const threadKey = scopedThreadKey(scopeThreadRef(thread.environmentId, thread.id));
+        if (threadFlagById[threadKey] == null) return false;
+      }
+      return true;
+    });
     const active: EnvironmentThreadShell[] = [];
     const snoozed: EnvironmentThreadShell[] = [];
     const settled: EnvironmentThreadShell[] = [];
@@ -1613,10 +1664,12 @@ export default function SidebarV2() {
   }, [
     autoSettleAfterDays,
     changeRequestStateByKey,
+    flagFilterActive,
     nowMinute,
     scopedProjectKeys,
     serverConfigs,
     snoozeWakeTick,
+    threadFlagById,
     threads,
   ]);
 
@@ -2129,6 +2182,7 @@ export default function SidebarV2() {
         actionableCount: regeneratableTitleThreads.length,
       });
       const snoozePresets = resolveSnoozePresets(new Date());
+      const bulkFlagMenu = buildThreadFlagContextMenuItems(null, { alwaysShowClear: true });
       const clicked = await settlePromise(() =>
         api.contextMenu.show(
           [
@@ -2147,6 +2201,11 @@ export default function SidebarV2() {
               : []),
             ...(titleRegenerationMenuItem ? [titleRegenerationMenuItem] : []),
             { id: "mark-unread", label: `Mark unread (${count})` },
+            {
+              id: bulkFlagMenu.id,
+              label: `Flag (${count})`,
+              children: bulkFlagMenu.children,
+            },
             { id: "delete", label: `Delete (${count})`, destructive: true },
           ],
           position,
@@ -2168,6 +2227,14 @@ export default function SidebarV2() {
           }
           clearSelection();
         }
+        return;
+      }
+      const bulkFlagValue = parseThreadFlagMenuId(clicked.value);
+      if (bulkFlagValue !== undefined) {
+        for (const threadKey of threadKeys) {
+          setThreadFlag(threadKey, bulkFlagValue);
+        }
+        clearSelection();
         return;
       }
       if (clicked.value === "regenerate-title") {
@@ -2263,6 +2330,7 @@ export default function SidebarV2() {
       markThreadUnread,
       removeFromSelection,
       serverConfigs,
+      setThreadFlag,
       updateThreadMetadata,
     ],
   );
@@ -2301,6 +2369,8 @@ export default function SidebarV2() {
         const isSnoozed = snoozedThreadKeysRef.current.has(threadKey);
         // Presets resolve at menu-open time (same as the popover).
         const snoozePresets = resolveSnoozePresets(new Date());
+        const currentFlag = threadFlagById[threadKey] ?? null;
+        const flagMenu = buildThreadFlagContextMenuItems(currentFlag);
         const clicked = await settlePromise(() =>
           api.contextMenu.show(
             [
@@ -2345,6 +2415,11 @@ export default function SidebarV2() {
                   ]
                 : []),
               { id: "mark-unread", label: "Mark unread" },
+              {
+                id: flagMenu.id,
+                label: flagMenu.label,
+                children: flagMenu.children,
+              },
               { id: "copy-path", label: "Copy path", icon: "copy" },
               ...(thread.branch ? [{ id: "copy-branch", label: "Copy branch", icon: "copy" }] : []),
               { id: "delete", label: "Delete", destructive: true, icon: "trash" },
@@ -2358,6 +2433,11 @@ export default function SidebarV2() {
             (candidate) => `snooze:${candidate.id}` === clicked.value,
           );
           if (preset) attemptSnooze(threadRef, preset);
+          return;
+        }
+        const flagValue = parseThreadFlagMenuId(clicked.value);
+        if (flagValue !== undefined) {
+          setThreadFlag(threadKey, flagValue);
           return;
         }
         switch (clicked.value) {
@@ -2479,7 +2559,9 @@ export default function SidebarV2() {
       markThreadUnread,
       projectCwdByKey,
       serverConfigs,
+      setThreadFlag,
       startThreadRename,
+      threadFlagById,
       updateThreadMetadata,
     ],
   );
@@ -2735,6 +2817,41 @@ export default function SidebarV2() {
                     </MenuRadioGroup>
                   </MenuPopup>
                 </Menu>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <SidebarMenuButton
+                        size="icon"
+                        className={cn(
+                          "relative shrink-0 focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
+                          flagFilterActive &&
+                            "bg-sidebar-row-hover text-sidebar-foreground hover:bg-sidebar-row-hover",
+                        )}
+                        onClick={() => setFlagFilterActive((active) => !active)}
+                        type="button"
+                        aria-label={
+                          flagFilterActive ? "Show all threads" : "Show flagged threads only"
+                        }
+                        aria-pressed={flagFilterActive}
+                        data-testid="sidebar-v2-flag-filter"
+                      />
+                    }
+                  >
+                    <FlagIcon
+                      className={cn(
+                        "size-4",
+                        flagFilterActive && "fill-current text-red-500 dark:text-red-400",
+                      )}
+                    />
+                    <span
+                      className="pointer-events-none absolute left-1/2 top-1/2 size-[max(100%,3rem)] -translate-1/2 pointer-fine:hidden"
+                      aria-hidden="true"
+                    />
+                  </TooltipTrigger>
+                  <TooltipPopup side="right">
+                    {flagFilterActive ? "Showing flagged only" : "Filter flagged"}
+                  </TooltipPopup>
+                </Tooltip>
                 <Tooltip>
                   <TooltipTrigger
                     render={
@@ -3013,6 +3130,8 @@ export default function SidebarV2() {
                     Add project
                   </button>
                 </>
+              ) : flagFilterActive ? (
+                "No flagged threads"
               ) : scopedProjectGroup ? (
                 `No threads in ${scopedProjectGroup.displayName} yet`
               ) : (

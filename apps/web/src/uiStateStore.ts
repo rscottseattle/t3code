@@ -1,6 +1,7 @@
 import { Debouncer } from "@tanstack/react-pacer";
 import { create } from "zustand";
 import { normalizeProjectPathForComparison } from "./lib/projectPaths";
+import { sanitizeThreadFlagRecord, type ThreadFlagColor } from "./threadFlags";
 
 export const PERSISTED_STATE_KEY = "t3code:ui-state:v1";
 const THREAD_CHANGED_FILES_EXPANSION_VERSION = 1;
@@ -21,6 +22,7 @@ export interface PersistedUiState {
   projectExpandedById?: Record<string, boolean>;
   projectOrder?: string[];
   threadLastVisitedAtById?: Record<string, string>;
+  threadFlagById?: Record<string, ThreadFlagColor>;
   collapsedProjectCwds?: string[];
   expandedProjectCwds?: string[];
   projectOrderCwds?: string[];
@@ -36,6 +38,7 @@ export interface UiProjectState {
 
 export interface UiThreadState {
   threadLastVisitedAtById: Record<string, string>;
+  threadFlagById: Record<string, ThreadFlagColor>;
   threadChangedFilesExpandedById: Record<string, Record<string, boolean>>;
 }
 
@@ -49,6 +52,7 @@ const initialState: UiState = {
   projectExpandedById: {},
   projectOrder: [],
   threadLastVisitedAtById: {},
+  threadFlagById: {},
   threadChangedFilesExpandedById: {},
   defaultAdvertisedEndpointKey: null,
 };
@@ -126,6 +130,7 @@ export function parsePersistedState(parsed: PersistedUiState): UiState {
     projectExpandedById,
     projectOrder,
     threadLastVisitedAtById: sanitizeTimestampRecord(parsed.threadLastVisitedAtById),
+    threadFlagById: sanitizeThreadFlagRecord(parsed.threadFlagById),
     threadChangedFilesExpandedById:
       parsed.threadChangedFilesExpansionVersion === THREAD_CHANGED_FILES_EXPANSION_VERSION
         ? sanitizePersistedThreadChangedFilesExpanded(parsed.threadChangedFilesExpandedById)
@@ -204,6 +209,7 @@ export function persistState(state: UiState): void {
         projectExpandedById,
         projectOrder: state.projectOrder,
         threadLastVisitedAtById: state.threadLastVisitedAtById,
+        threadFlagById: state.threadFlagById,
         defaultAdvertisedEndpointKey: state.defaultAdvertisedEndpointKey,
         threadChangedFilesExpansionVersion: THREAD_CHANGED_FILES_EXPANSION_VERSION,
         threadChangedFilesExpandedById: state.threadChangedFilesExpandedById,
@@ -266,6 +272,38 @@ export function markThreadUnread(
     threadLastVisitedAtById: {
       ...state.threadLastVisitedAtById,
       [threadId]: unreadVisitedAt,
+    },
+  };
+}
+
+export function setThreadFlag(
+  state: UiState,
+  threadId: string,
+  flag: ThreadFlagColor | null,
+): UiState {
+  if (!threadId) {
+    return state;
+  }
+  const current = state.threadFlagById[threadId] ?? null;
+  if (current === flag) {
+    return state;
+  }
+  if (flag === null) {
+    if (!(threadId in state.threadFlagById)) {
+      return state;
+    }
+    const threadFlagById = { ...state.threadFlagById };
+    delete threadFlagById[threadId];
+    return {
+      ...state,
+      threadFlagById,
+    };
+  }
+  return {
+    ...state,
+    threadFlagById: {
+      ...state.threadFlagById,
+      [threadId]: flag,
     },
   };
 }
@@ -384,6 +422,7 @@ export function reorderProjects(
 interface UiStateStore extends UiState {
   markThreadVisited: (threadId: string, visitedAt: string) => void;
   markThreadUnread: (threadId: string, latestTurnCompletedAt: string | null | undefined) => void;
+  setThreadFlag: (threadId: string, flag: ThreadFlagColor | null) => void;
   setThreadChangedFilesExpanded: (threadId: string, turnId: string, expanded: boolean) => void;
   setDefaultAdvertisedEndpointKey: (key: string | null) => void;
   setProjectExpanded: (projectIds: string | readonly string[], expanded: boolean) => void;
@@ -400,6 +439,7 @@ export const useUiStateStore = create<UiStateStore>((set) => ({
     set((state) => markThreadVisited(state, threadId, visitedAt)),
   markThreadUnread: (threadId, latestTurnCompletedAt) =>
     set((state) => markThreadUnread(state, threadId, latestTurnCompletedAt)),
+  setThreadFlag: (threadId, flag) => set((state) => setThreadFlag(state, threadId, flag)),
   setThreadChangedFilesExpanded: (threadId, turnId, expanded) =>
     set((state) => setThreadChangedFilesExpanded(state, threadId, turnId, expanded)),
   setDefaultAdvertisedEndpointKey: (key) =>
