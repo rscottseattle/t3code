@@ -33,7 +33,7 @@ import { createModelSelection, normalizeModelSlug } from "@t3tools/shared/model"
 import { useMemo } from "react";
 import { getLocalStorageItem } from "./hooks/useLocalStorage";
 import { resolveAppModelSelection, resolveAppModelSelectionForInstance } from "./modelSelection";
-import { DEFAULT_INTERACTION_MODE, DEFAULT_RUNTIME_MODE, type ChatImageAttachment } from "./types";
+import { DEFAULT_INTERACTION_MODE, DEFAULT_RUNTIME_MODE } from "./types";
 import {
   type TerminalContextDraft,
   ensureInlineTerminalContextPlaceholders,
@@ -79,6 +79,8 @@ if (typeof window !== "undefined" && typeof window.addEventListener === "functio
 }
 
 export const PersistedComposerImageAttachment = Schema.Struct({
+  // Optional for backwards-compatible draft hydration of older image-only drafts.
+  type: Schema.optional(Schema.Literals(["image", "file"])),
   id: Schema.String,
   name: Schema.String,
   mimeType: Schema.String,
@@ -87,7 +89,13 @@ export const PersistedComposerImageAttachment = Schema.Struct({
 });
 export type PersistedComposerImageAttachment = typeof PersistedComposerImageAttachment.Type;
 
-export interface ComposerImageAttachment extends Omit<ChatImageAttachment, "previewUrl"> {
+/** Composer draft attachment: images (previewable) or text/document files. */
+export interface ComposerImageAttachment {
+  type: "image" | "file";
+  id: string;
+  name: string;
+  mimeType: string;
+  sizeBytes: number;
   previewUrl: string;
   file: File;
 }
@@ -1075,7 +1083,14 @@ function normalizePersistedAttachment(value: unknown): PersistedComposerImageAtt
   ) {
     return null;
   }
+  const type =
+    candidate.type === "file" || candidate.type === "image"
+      ? candidate.type
+      : mimeType.toLowerCase().startsWith("image/")
+        ? ("image" as const)
+        : ("file" as const);
   return {
+    type,
     id,
     name,
     mimeType,
@@ -2102,9 +2117,16 @@ export function hydrateImagesFromPersisted(
     const file = hydratePersistedComposerImageAttachment(attachment);
     if (!file) return [];
 
+    const type =
+      attachment.type === "file" || attachment.type === "image"
+        ? attachment.type
+        : attachment.mimeType.toLowerCase().startsWith("image/")
+          ? ("image" as const)
+          : ("file" as const);
+
     return [
       {
-        type: "image" as const,
+        type,
         id: attachment.id,
         name: attachment.name,
         mimeType: attachment.mimeType,

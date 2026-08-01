@@ -40,6 +40,10 @@ import * as ChildProcessSpawner from "effect/unstable/process/ChildProcessSpawne
 import * as EffectAcpErrors from "effect-acp/errors";
 import type * as EffectAcpSchema from "effect-acp/schema";
 
+import {
+  mergePromptWithFileAttachments,
+  tryDecodeFileAttachmentText,
+} from "../../attachmentPrompt.ts";
 import { resolveAttachmentPath } from "../../attachmentStore.ts";
 import { ServerConfig } from "../../config.ts";
 import * as McpProviderSession from "../../mcp/McpProviderSession.ts";
@@ -961,9 +965,7 @@ export function makeCursorAdapter(
           }
 
           const promptParts: Array<EffectAcpSchema.ContentBlock> = [];
-          if (input.input?.trim()) {
-            promptParts.push({ type: "text", text: input.input.trim() });
-          }
+          const fileTexts: Array<{ name: string; text: string }> = [];
           if (input.attachments && input.attachments.length > 0) {
             for (const attachment of input.attachments) {
               const attachmentPath = resolveAttachmentPath({
@@ -988,12 +990,31 @@ export function makeCursorAdapter(
                     }),
                 ),
               );
+              if (attachment.type === "file") {
+                const decoded = tryDecodeFileAttachmentText({ attachment, bytes });
+                if (decoded === null) {
+                  return yield* new ProviderAdapterRequestError({
+                    provider: PROVIDER,
+                    method: "session/prompt",
+                    detail: `Cursor cannot use binary file attachment '${attachment.name}'. Attach a text/CSV/markdown/HTML document instead.`,
+                  });
+                }
+                fileTexts.push({ name: attachment.name, text: decoded });
+                continue;
+              }
               promptParts.push({
                 type: "image",
                 data: Buffer.from(bytes).toString("base64"),
                 mimeType: attachment.mimeType,
               });
             }
+          }
+          const text = mergePromptWithFileAttachments({
+            prompt: input.input?.trim() ?? "",
+            files: fileTexts,
+          });
+          if (text.length > 0) {
+            promptParts.unshift({ type: "text", text });
           }
 
           if (promptParts.length === 0) {

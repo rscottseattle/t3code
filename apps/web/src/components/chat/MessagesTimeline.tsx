@@ -884,13 +884,32 @@ function UserTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "message" 
     ...displayedUserMessage.elementContexts,
     ...elementContextState.contexts,
   ];
-  const previewImages = userImages.filter((image) => image.name.startsWith("preview-annotation-"));
-  const regularImages = userImages.filter((image) => !image.name.startsWith("preview-annotation-"));
+  const previewImages = userImages.filter(
+    (image) => image.type === "image" && image.name.startsWith("preview-annotation-"),
+  );
+  const regularAttachments = userImages.filter(
+    (image) => !(image.type === "image" && image.name.startsWith("preview-annotation-")),
+  );
+  const regularImages = regularAttachments.filter((attachment) => attachment.type === "image");
+  const regularFiles = regularAttachments.filter((attachment) => attachment.type === "file");
   const canRevertAgentWork = typeof row.revertTurnCount === "number";
 
   return (
     <div className="group flex flex-col items-end gap-1">
       <div className="relative max-w-[80%] rounded-2xl bg-accent p-3">
+        {regularFiles.length > 0 && (
+          <div className="mb-2 flex max-w-[420px] flex-wrap gap-2">
+            {regularFiles.map((file) => (
+              <div
+                key={file.id}
+                className="flex max-w-full items-center gap-2 rounded-lg border border-border/80 bg-background/70 px-2.5 py-1.5"
+                title={file.name}
+              >
+                <span className="truncate text-xs font-medium text-foreground">{file.name}</span>
+              </div>
+            ))}
+          </div>
+        )}
         {regularImages.length > 0 && (
           <div className="mb-2 grid max-w-[420px] grid-cols-2 gap-2">
             {regularImages.map((image: NonNullable<TimelineMessage["attachments"]>[number]) => (

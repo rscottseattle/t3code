@@ -50,6 +50,10 @@ import {
   type ProviderAdapterError,
 } from "../Errors.ts";
 import { type CodexAdapterShape } from "../Services/CodexAdapter.ts";
+import {
+  mergePromptWithFileAttachments,
+  tryDecodeFileAttachmentText,
+} from "../../attachmentPrompt.ts";
 import { resolveAttachmentPath } from "../../attachmentStore.ts";
 import { ServerConfig } from "../../config.ts";
 import {
@@ -1496,8 +1500,7 @@ export const makeCodexAdapter = Effect.fn("makeCodexAdapter")(function* (
       }),
     );
 
-  const resolveAttachment = Effect.fn("resolveAttachment")(function* (
-    input: ProviderSendTurnInput,
+  const resolveImageAttachment = Effect.fn("resolveImageAttachment")(function* (
     attachment: NonNullable<ProviderSendTurnInput["attachments"]>[number],
   ) {
     const attachmentPath = resolveAttachmentPath({
@@ -1528,12 +1531,57 @@ export const makeCodexAdapter = Effect.fn("makeCodexAdapter")(function* (
     };
   });
 
-  const sendTurn: CodexAdapterShape["sendTurn"] = Effect.fn("sendTurn")(function* (input) {
-    const codexAttachments = yield* Effect.forEach(
-      input.attachments ?? [],
-      (attachment) => resolveAttachment(input, attachment),
-      { concurrency: 1 },
+  const resolveFileAttachmentText = Effect.fn("resolveFileAttachmentText")(function* (
+    attachment: NonNullable<ProviderSendTurnInput["attachments"]>[number] & { type: "file" },
+  ) {
+    const attachmentPath = resolveAttachmentPath({
+      attachmentsDir: serverConfig.attachmentsDir,
+      attachment,
+    });
+    if (!attachmentPath) {
+      return yield* new ProviderAdapterRequestError({
+        provider: PROVIDER,
+        method: "turn/start",
+        detail: `Invalid attachment id '${attachment.id}'.`,
+      });
+    }
+    const bytes = yield* fileSystem.readFile(attachmentPath).pipe(
+      Effect.mapError(
+        (cause) =>
+          new ProviderAdapterRequestError({
+            provider: PROVIDER,
+            method: "turn/start",
+            detail: `Failed to read attachment file: ${cause.message}.`,
+            cause,
+          }),
+      ),
     );
+    const decoded = tryDecodeFileAttachmentText({ attachment, bytes });
+    if (decoded === null) {
+      return yield* new ProviderAdapterRequestError({
+        provider: PROVIDER,
+        method: "turn/start",
+        detail: `Codex cannot use binary file attachment '${attachment.name}'. Attach a text/CSV/markdown/HTML document instead.`,
+      });
+    }
+    return { name: attachment.name, text: decoded };
+  });
+
+  const sendTurn: CodexAdapterShape["sendTurn"] = Effect.fn("sendTurn")(function* (input) {
+    const codexAttachments: Array<{ type: "image"; url: string }> = [];
+    const fileTexts: Array<{ name: string; text: string }> = [];
+    for (const attachment of input.attachments ?? []) {
+      if (attachment.type === "file") {
+        fileTexts.push(yield* resolveFileAttachmentText(attachment));
+        continue;
+      }
+      codexAttachments.push(yield* resolveImageAttachment(attachment));
+    }
+
+    const prompt = mergePromptWithFileAttachments({
+      prompt: input.input ?? "",
+      files: fileTexts,
+    });
 
     const session = yield* requireSession(input.threadId);
     const reasoningEffort =
@@ -1546,7 +1594,7 @@ export const makeCodexAdapter = Effect.fn("makeCodexAdapter")(function* (
         : undefined;
     return yield* session.runtime
       .sendTurn({
-        ...(input.input !== undefined ? { input: input.input } : {}),
+        ...(prompt.length > 0 ? { input: prompt } : {}),
         ...(input.modelSelection?.instanceId === boundInstanceId
           ? { model: input.modelSelection.model }
           : {}),

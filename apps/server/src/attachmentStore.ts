@@ -3,6 +3,7 @@ import * as NodeCrypto from "node:crypto";
 import * as NodeFS from "node:fs";
 
 import type { ChatAttachment } from "@t3tools/contracts";
+import { inferFileAttachmentExtension } from "@t3tools/shared/chatAttachments";
 
 import {
   normalizeAttachmentRelativePath,
@@ -10,7 +11,88 @@ import {
 } from "./attachmentPaths.ts";
 import { inferImageExtension, SAFE_IMAGE_FILE_EXTENSIONS } from "./imageMime.ts";
 
-const ATTACHMENT_FILENAME_EXTENSIONS = [...SAFE_IMAGE_FILE_EXTENSIONS, ".bin"];
+const SAFE_FILE_ATTACHMENT_EXTENSIONS = [
+  ".bin",
+  ".c",
+  ".cc",
+  ".cfg",
+  ".clj",
+  ".cljs",
+  ".cmd",
+  ".conf",
+  ".cpp",
+  ".cs",
+  ".css",
+  ".csv",
+  ".cxx",
+  ".doc",
+  ".docx",
+  ".env",
+  ".ex",
+  ".exs",
+  ".go",
+  ".h",
+  ".hh",
+  ".hpp",
+  ".htm",
+  ".html",
+  ".ini",
+  ".java",
+  ".js",
+  ".json",
+  ".jsonc",
+  ".jsonl",
+  ".jsx",
+  ".kt",
+  ".kts",
+  ".less",
+  ".log",
+  ".lua",
+  ".m",
+  ".md",
+  ".mdc",
+  ".mdx",
+  ".mjs",
+  ".mm",
+  ".odt",
+  ".ods",
+  ".pdf",
+  ".php",
+  ".pl",
+  ".pm",
+  ".ppt",
+  ".pptx",
+  ".properties",
+  ".py",
+  ".r",
+  ".rb",
+  ".rs",
+  ".rst",
+  ".rtf",
+  ".sass",
+  ".scala",
+  ".scss",
+  ".sh",
+  ".sql",
+  ".svelte",
+  ".swift",
+  ".toml",
+  ".ts",
+  ".tsv",
+  ".tsx",
+  ".txt",
+  ".vue",
+  ".xls",
+  ".xlsx",
+  ".xml",
+  ".yaml",
+  ".yml",
+  ".zsh",
+] as const;
+
+const ATTACHMENT_FILENAME_EXTENSIONS = [
+  ...new Set([...SAFE_IMAGE_FILE_EXTENSIONS, ...SAFE_FILE_ATTACHMENT_EXTENSIONS, ".bin"]),
+];
 const ATTACHMENT_ID_THREAD_SEGMENT_MAX_CHARS = 80;
 const ATTACHMENT_ID_THREAD_SEGMENT_PATTERN = "[a-z0-9_]+(?:-[a-z0-9_]+)*";
 const ATTACHMENT_ID_UUID_PATTERN = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
@@ -58,6 +140,13 @@ export function attachmentRelativePath(attachment: ChatAttachment): string {
   switch (attachment.type) {
     case "image": {
       const extension = inferImageExtension({
+        mimeType: attachment.mimeType,
+        fileName: attachment.name,
+      });
+      return `${attachment.id}${extension}`;
+    }
+    case "file": {
+      const extension = inferFileAttachmentExtension({
         mimeType: attachment.mimeType,
         fileName: attachment.name,
       });

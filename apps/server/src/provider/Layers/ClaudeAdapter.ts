@@ -67,6 +67,10 @@ import * as Ref from "effect/Ref";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 
+import {
+  mergePromptWithFileAttachments,
+  tryDecodeFileAttachmentText,
+} from "../../attachmentPrompt.ts";
 import { resolveAttachmentPath } from "../../attachmentStore.ts";
 import { ServerConfig } from "../../config.ts";
 import * as McpProviderSession from "../../mcp/McpProviderSession.ts";
@@ -939,26 +943,11 @@ const buildUserMessageEffect = Effect.fn("buildUserMessageEffect")(function* (
     readonly boundInstanceId: ProviderInstanceId;
   },
 ) {
-  const text = buildPromptText(input, dependencies.boundInstanceId);
+  const baseText = buildPromptText(input, dependencies.boundInstanceId);
   const sdkContent: Array<Record<string, unknown>> = [];
-
-  if (text.length > 0) {
-    sdkContent.push({ type: "text", text });
-  }
+  const fileTexts: Array<{ name: string; text: string }> = [];
 
   for (const attachment of input.attachments ?? []) {
-    if (attachment.type !== "image") {
-      continue;
-    }
-
-    if (!SUPPORTED_CLAUDE_IMAGE_MIME_TYPES.has(attachment.mimeType)) {
-      return yield* new ProviderAdapterRequestError({
-        provider: PROVIDER,
-        method: "turn/start",
-        detail: `Unsupported Claude image attachment type '${attachment.mimeType}'.`,
-      });
-    }
-
     const attachmentPath = resolveAttachmentPath({
       attachmentsDir: dependencies.attachmentsDir,
       attachment,
@@ -983,12 +972,39 @@ const buildUserMessageEffect = Effect.fn("buildUserMessageEffect")(function* (
       ),
     );
 
+    if (attachment.type === "file") {
+      const decoded = tryDecodeFileAttachmentText({ attachment, bytes });
+      if (decoded === null) {
+        return yield* new ProviderAdapterRequestError({
+          provider: PROVIDER,
+          method: "turn/start",
+          detail: `Claude cannot use binary file attachment '${attachment.name}'. Attach a text/CSV/markdown/HTML document instead.`,
+        });
+      }
+      fileTexts.push({ name: attachment.name, text: decoded });
+      continue;
+    }
+
+    if (!SUPPORTED_CLAUDE_IMAGE_MIME_TYPES.has(attachment.mimeType)) {
+      return yield* new ProviderAdapterRequestError({
+        provider: PROVIDER,
+        method: "turn/start",
+        detail: `Unsupported Claude image attachment type '${attachment.mimeType}'.`,
+      });
+    }
+
     sdkContent.push(
       buildClaudeImageContentBlock({
         mimeType: attachment.mimeType,
         bytes,
       }),
     );
+  }
+
+  const text = mergePromptWithFileAttachments({ prompt: baseText, files: fileTexts });
+  if (text.length > 0) {
+    // Text first so the model sees the user request before images/files.
+    sdkContent.unshift({ type: "text", text });
   }
 
   return buildUserMessage({ sdkContent });
