@@ -338,7 +338,7 @@ function collectThreadAttachmentRelativePaths(
   const relativePaths = new Set<string>();
   for (const message of messages) {
     for (const attachment of message.attachments ?? []) {
-      if (attachment.type !== "image") {
+      if (attachment.type !== "image" && attachment.type !== "file") {
         continue;
       }
       const attachmentThreadSegment = parseThreadSegmentFromAttachmentId(attachment.id);
@@ -817,9 +817,13 @@ const makeOrchestrationProjectionPipeline = Effect.fn("makeOrchestrationProjecti
           if (Option.isNone(existingRow)) {
             return;
           }
+          // A session clearing activeTurnId means the turn ended, so retain
+          // the last known turn instead of erasing the completed turn pointer.
+          const nextLatestTurnId =
+            event.payload.session.activeTurnId ?? existingRow.value.latestTurnId;
           yield* projectionThreadRepository.upsert({
             ...existingRow.value,
-            latestTurnId: event.payload.session.activeTurnId,
+            latestTurnId: nextLatestTurnId,
             updatedAt: event.occurredAt,
           });
           yield* refreshThreadShellSummary(event.payload.threadId);
