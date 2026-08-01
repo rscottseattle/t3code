@@ -67,8 +67,10 @@ describe("DesktopEnvironment", () => {
       assert.equal(environment.appRoot, "/repo");
       assert.equal(environment.backendEntryPath, "/repo/apps/server/dist/bin.mjs");
       assert.equal(environment.backendCwd, "/repo");
-      assert.equal(environment.appUserModelId, "com.t3tools.t3code.dev");
-      assert.equal(environment.linuxWmClass, "t3code-dev");
+      assert.equal(environment.appUserModelId, "com.t3tools.t3r.dev");
+      assert.equal(environment.linuxWmClass, "t3r-dev");
+      assert.equal(environment.userDataDirName, "t3code-dev");
+      assert.equal(environment.legacyUserDataDirName, "T3 Code (Dev)");
       assert.deepEqual(
         Option.map(environment.devServerUrl, (url) => url.href),
         Option.some("http://localhost:5173/"),
@@ -108,6 +110,8 @@ describe("DesktopEnvironment", () => {
 
       assert.equal(development.stateDir, "/Users/alice/.t3/dev");
       assert.equal(production.stateDir, "/Users/alice/.t3/userdata");
+      assert.equal(production.userDataDirName, "t3code");
+      assert.equal(production.legacyUserDataDirName, "T3 Code (Alpha)");
     }),
   );
 

@@ -166,8 +166,10 @@ const make = Effect.fn("desktop.environment.make")(function* (
     baseDir,
     isDevelopment && Option.isNone(configuredBaseDir) ? "dev" : "userdata",
   );
-  const userDataDirName = isDevelopment ? "t3r-dev" : "t3r";
-  const legacyUserDataDirName = isDevelopment ? "T3r (Dev)" : "T3r";
+  // Keep Electron's profile identifiers stable across product-name changes;
+  // browser-local UI state includes the unread-thread watermarks.
+  const userDataDirName = isDevelopment ? "t3code-dev" : "t3code";
+  const legacyUserDataDirName = isDevelopment ? "T3 Code (Dev)" : "T3 Code (Alpha)";
   const resourcesPath = input.resourcesPath;
 
   return DesktopEnvironment.of({
