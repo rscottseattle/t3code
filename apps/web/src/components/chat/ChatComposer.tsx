@@ -2597,7 +2597,12 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       });
     }
 
-    focusComposer();
+    // applyPromptReplacement already focuses on the next animation frame.
+    // Focusing synchronously here makes the editor publish its stale pre-drop
+    // snapshot and erase the path mention that was just inserted.
+    if (pathMentions.length === 0) {
+      focusComposer();
+    }
   };
 
   // File-tree drags land as mentions. Handled in the capture phase so the
