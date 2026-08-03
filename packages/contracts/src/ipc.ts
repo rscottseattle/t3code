@@ -1043,11 +1043,6 @@ export interface DesktopBridge {
    * (Finder / Explorer). Uses Electron webUtils.getPathForFile. Desktop only.
    */
   getPathForFile?: (file: File) => string | null;
-  /**
-   * Lightweight stat for a path resolved from an OS drop. Used to tell folders
-   * from files so directories can become path mentions rather than attachments.
-   */
-  statPath?: (path: string) => { isDirectory: boolean; isFile: boolean } | null;
   onMenuAction: (listener: (action: string) => void) => () => void;
   getWindowFullscreenState: () => boolean;
   onWindowFullscreenStateChange: (listener: (fullscreen: boolean) => void) => () => void;

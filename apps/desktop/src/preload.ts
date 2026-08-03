@@ -6,7 +6,6 @@ import type {
 } from "@t3tools/contracts";
 import { exposeClerkBridge } from "@clerk/electron/preload";
 import { contextBridge, ipcRenderer, webUtils } from "electron";
-import * as NodeFS from "node:fs";
 
 import * as IpcChannels from "./ipc/channels.ts";
 
@@ -112,16 +111,6 @@ contextBridge.exposeInMainWorld("desktopBridge", {
     try {
       const filePath = webUtils.getPathForFile(file);
       return typeof filePath === "string" && filePath.trim().length > 0 ? filePath : null;
-    } catch {
-      return null;
-    }
-  },
-  statPath: (targetPath: string) => {
-    try {
-      const trimmed = targetPath.trim();
-      if (trimmed.length === 0) return null;
-      const st = NodeFS.statSync(trimmed);
-      return { isDirectory: st.isDirectory(), isFile: st.isFile() };
     } catch {
       return null;
     }

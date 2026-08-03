@@ -2517,8 +2517,9 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     );
   };
 
-  // OS (Finder/Explorer) file drops: folders and non-attachable paths become
-  // path mentions (agent reference locations). Attachable files still import.
+  // Native desktop drops become path mentions so the local agent can use the
+  // original file or folder without copying it into attachment storage. A web
+  // browser cannot reveal local paths, so attachable browser files still import.
   const onComposerDrop = (event: React.DragEvent<HTMLDivElement>) => {
     if (!event.dataTransfer.types.includes("Files")) return;
     event.preventDefault();
@@ -2557,12 +2558,10 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
 
     const classified = pairs.map(({ file, isDirectoryEntry }) => {
       const absolutePath = bridge?.getPathForFile?.(file) ?? null;
-      const stat = absolutePath && bridge?.statPath ? bridge.statPath(absolutePath) : null;
       return classifyOsDropItem({
         file,
         isDirectoryEntry,
         absolutePath,
-        isDirectoryPath: stat?.isDirectory ?? null,
       });
     });
 
@@ -2576,7 +2575,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       if (!insertComposerTextAtEnd(mentionText, { ensureLeadingBoundary: true })) {
         toastManager.add({
           type: "error",
-          title: "Unable to add folder path",
+          title: "Unable to add file or folder path",
           description: "The composer is busy; try again once it is ready.",
         });
       }

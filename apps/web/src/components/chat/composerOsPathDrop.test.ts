@@ -62,16 +62,6 @@ describe("classifyOsDropItem", () => {
     });
   });
 
-  it("prefers fs.stat directory flag over a false webkit entry", () => {
-    const result = classifyOsDropItem({
-      file: fakeFile("research", "", 0),
-      isDirectoryEntry: false,
-      absolutePath: "/Users/ryan/proj/docs/research",
-      isDirectoryPath: true,
-    });
-    expect(result.kind).toBe("path-mention");
-  });
-
   it("rejects directories without a resolvable path", () => {
     const result = classifyOsDropItem({
       file: fakeFile("research"),
@@ -81,30 +71,43 @@ describe("classifyOsDropItem", () => {
     expect(result).toEqual({ kind: "unsupported", name: "research" });
   });
 
-  it("keeps attachable files as attachments", () => {
+  it("turns attachable local files into path mentions", () => {
     const file = fakeFile("notes.md", "text/markdown", 12);
     const result = classifyOsDropItem({
       file,
       isDirectoryEntry: false,
       absolutePath: "/Users/ryan/proj/notes.md",
     });
+    expect(result).toEqual({
+      kind: "path-mention",
+      path: "/Users/ryan/proj/notes.md",
+      name: "notes.md",
+    });
+  });
+
+  it("keeps attachable browser files as attachments when no local path is available", () => {
+    const file = fakeFile("notes.md", "text/markdown", 12);
+    const result = classifyOsDropItem({
+      file,
+      isDirectoryEntry: false,
+      absolutePath: null,
+    });
     expect(result).toEqual({ kind: "attachable-file", file, name: "notes.md" });
   });
 
-  it("turns non-attachable files with a path into path mentions", () => {
+  it("turns MP3 files with a desktop path into path mentions", () => {
     const result = classifyOsDropItem({
-      file: fakeFile("payload.bin", "application/octet-stream", 64),
+      file: fakeFile("interview.mp3", "audio/mpeg", 64),
       isDirectoryEntry: false,
-      absolutePath: "/Users/ryan/proj/payload.bin",
+      absolutePath: "/Users/ryan/proj/interview.mp3",
     });
     expect(result.kind).toBe("path-mention");
-    expect(result.path).toBe("/Users/ryan/proj/payload.bin");
+    expect(result.path).toBe("/Users/ryan/proj/interview.mp3");
   });
 });
 
 describe("partitionOsDropItems", () => {
-  it("splits mentions, attachments, and unsupported names", () => {
-    const md = fakeFile("a.md", "text/markdown", 4);
+  it("splits path mentions and unsupported names for desktop drops", () => {
     const items = [
       classifyOsDropItem({
         file: fakeFile("research"),
@@ -112,7 +115,7 @@ describe("partitionOsDropItems", () => {
         absolutePath: "/ws/docs/research",
       }),
       classifyOsDropItem({
-        file: md,
+        file: fakeFile("a.md", "text/markdown", 4),
         isDirectoryEntry: false,
         absolutePath: "/ws/a.md",
       }),
@@ -123,8 +126,8 @@ describe("partitionOsDropItems", () => {
       }),
     ];
     const partitioned = partitionOsDropItems(items, "/ws");
-    expect(partitioned.pathMentions).toEqual(["[research](docs/research)"]);
-    expect(partitioned.attachableFiles).toEqual([md]);
+    expect(partitioned.pathMentions).toEqual(["[research](docs/research)", "[a.md](a.md)"]);
+    expect(partitioned.attachableFiles).toEqual([]);
     expect(partitioned.unsupportedNames).toEqual(["mystery"]);
   });
 

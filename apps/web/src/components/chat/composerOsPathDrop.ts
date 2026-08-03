@@ -8,9 +8,9 @@ import {
 import { serializeComposerFileLink } from "@t3tools/shared/composerTrigger";
 
 /**
- * OS (Finder/Explorer) drops of folders should become path *references* for the
- * agent — not content attachments. File-tree drags already use a custom
- * mention MIME type; this module covers native filesystem drops.
+ * Native desktop drops should become path *references* for the agent — not
+ * copied content attachments. File-tree drags already use a custom mention
+ * MIME type; this module covers Finder/Explorer filesystem drops.
  */
 
 export type OsDropItemKind = "path-mention" | "attachable-file" | "unsupported";
@@ -29,11 +29,6 @@ export interface ClassifyOsDropItemInput {
   readonly isDirectoryEntry: boolean;
   /** Absolute filesystem path from Electron webUtils.getPathForFile, when known. */
   readonly absolutePath: string | null;
-  /**
-   * When absolutePath is known, optional fs.stat result. Preferred over the
-   * webkit entry flag because folder File objects sometimes look like empty files.
-   */
-  readonly isDirectoryPath?: boolean | null;
 }
 
 function toPosixSeparators(value: string): string {
@@ -112,23 +107,21 @@ export function serializeOsPathMention(
 /**
  * Classify one dropped OS file/folder for the composer.
  *
- * Directories with a resolvable path → path mention.
- * Attachable files → attachment.
+ * Any item with a desktop-resolved path → path mention.
+ * Attachable browser files without a local path → attachment.
  * Everything else → unsupported (existing toast path).
  */
 export function classifyOsDropItem(input: ClassifyOsDropItemInput): OsDropItem {
   const name = input.file.name || "item";
-  const isDirectory =
-    input.isDirectoryPath === true || (input.isDirectoryPath == null && input.isDirectoryEntry);
+  if (input.absolutePath && input.absolutePath.trim().length > 0) {
+    return {
+      kind: "path-mention",
+      path: normalizeProjectPathForDispatch(input.absolutePath),
+      name,
+    };
+  }
 
-  if (isDirectory) {
-    if (input.absolutePath && input.absolutePath.trim().length > 0) {
-      return {
-        kind: "path-mention",
-        path: normalizeProjectPathForDispatch(input.absolutePath),
-        name,
-      };
-    }
+  if (input.isDirectoryEntry) {
     return { kind: "unsupported", name };
   }
 
@@ -139,16 +132,6 @@ export function classifyOsDropItem(input: ClassifyOsDropItemInput): OsDropItem {
     })
   ) {
     return { kind: "attachable-file", file: input.file, name };
-  }
-
-  // Non-attachable file with a known path still makes a useful agent reference
-  // (e.g. binary configs the model should open on disk rather than inline).
-  if (input.absolutePath && input.absolutePath.trim().length > 0) {
-    return {
-      kind: "path-mention",
-      path: normalizeProjectPathForDispatch(input.absolutePath),
-      name,
-    };
   }
 
   return { kind: "unsupported", name };
