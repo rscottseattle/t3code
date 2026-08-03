@@ -50,6 +50,7 @@ import {
 } from "../../composer-logic";
 import { deriveComposerSendState, readFileAsDataUrl } from "../ChatView.logic";
 import {
+  claimComposerOsFileDrag,
   dataTransferHasComposerMention,
   makeComposerMentionDragHandlers,
 } from "./composerMentionDrag";
@@ -2622,6 +2623,38 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     setIsDragOverComposer(false);
   };
 
+  const onComposerDragEnterCapture = (event: React.DragEvent<HTMLDivElement>) => {
+    if (claimComposerOsFileDrag(event)) {
+      onComposerDragEnter(event);
+      return;
+    }
+    composerMentionDragHandlers.onDragEnter(event);
+  };
+
+  const onComposerDragOverCapture = (event: React.DragEvent<HTMLDivElement>) => {
+    if (claimComposerOsFileDrag(event)) {
+      onComposerDragOver(event);
+      return;
+    }
+    composerMentionDragHandlers.onDragOver(event);
+  };
+
+  const onComposerDragLeaveCapture = (event: React.DragEvent<HTMLDivElement>) => {
+    if (claimComposerOsFileDrag(event)) {
+      onComposerDragLeave(event);
+      return;
+    }
+    onComposerMentionDragLeaveCapture(event);
+  };
+
+  const onComposerDropCapture = (event: React.DragEvent<HTMLDivElement>) => {
+    if (claimComposerOsFileDrag(event)) {
+      onComposerDrop(event);
+      return;
+    }
+    composerMentionDragHandlers.onDrop(event);
+  };
+
   // A cancelled drag (Escape) can end without a dragleave on the hovered
   // target, which would leave the drop highlight stuck. dragend always fires
   // on the in-page drag source and bubbles to window, so it is the reset of
@@ -2821,14 +2854,10 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
           "group rounded-[22px] p-px transition-colors duration-200",
           composerProviderState.composerFrameClassName,
         )}
-        onDragEnter={onComposerDragEnter}
-        onDragOver={onComposerDragOver}
-        onDragLeave={onComposerDragLeave}
-        onDrop={onComposerDrop}
-        onDragEnterCapture={composerMentionDragHandlers.onDragEnter}
-        onDragOverCapture={composerMentionDragHandlers.onDragOver}
-        onDragLeaveCapture={onComposerMentionDragLeaveCapture}
-        onDropCapture={composerMentionDragHandlers.onDrop}
+        onDragEnterCapture={onComposerDragEnterCapture}
+        onDragOverCapture={onComposerDragOverCapture}
+        onDragLeaveCapture={onComposerDragLeaveCapture}
+        onDropCapture={onComposerDropCapture}
       >
         <div
           ref={composerSurfaceRef}

@@ -2,6 +2,7 @@ import { describe, expect, it } from "@effect/vitest";
 
 import {
   COMPOSER_MENTION_DRAG_TYPE,
+  claimComposerOsFileDrag,
   type ComposerMentionDropHost,
   composerMentionFromTreePath,
   dataTransferHasComposerMention,
@@ -61,6 +62,15 @@ describe("dataTransferHasComposerMention", () => {
     expect(dataTransferHasComposerMention([COMPOSER_MENTION_DRAG_TYPE, "text/plain"])).toBe(true);
     expect(dataTransferHasComposerMention(["Files"])).toBe(false);
     expect(dataTransferHasComposerMention([])).toBe(false);
+  });
+});
+
+describe("claimComposerOsFileDrag", () => {
+  it("claims Finder drops during capture before the editor can consume them", () => {
+    const { event, calls } = makeDragEvent({ types: ["Files"] });
+
+    expect(claimComposerOsFileDrag(event)).toBe(true);
+    expect(calls).toEqual(["preventDefault", "stopPropagation", "nativeStopPropagation"]);
   });
 });
 

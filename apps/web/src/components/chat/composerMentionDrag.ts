@@ -51,6 +51,21 @@ export interface ComposerMentionDragHandlers {
   onDrop(event: ComposerMentionDragEvent): void;
 }
 
+/**
+ * Claim native OS file drags in the wrapper's capture phase. The editor owns
+ * native drop listeners, so waiting for React's bubble phase lets it consume
+ * Finder drops before the composer can turn them into path mentions.
+ */
+export function claimComposerOsFileDrag(event: ComposerMentionDragEvent): boolean {
+  if (!event.dataTransfer.types.includes("Files")) {
+    return false;
+  }
+  event.preventDefault();
+  event.stopPropagation();
+  event.nativeEvent.stopPropagation();
+  return true;
+}
+
 export function makeComposerMentionDragHandlers(
   host: ComposerMentionDropHost,
 ): ComposerMentionDragHandlers {
