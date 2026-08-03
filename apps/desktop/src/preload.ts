@@ -5,7 +5,8 @@ import type {
   DesktopPreviewTabState,
 } from "@t3tools/contracts";
 import { exposeClerkBridge } from "@clerk/electron/preload";
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, webUtils } from "electron";
+import * as NodeFS from "node:fs";
 
 import * as IpcChannels from "./ipc/channels.ts";
 
@@ -107,6 +108,24 @@ contextBridge.exposeInMainWorld("desktopBridge", {
   openExternal: (url: string) => ipcRenderer.invoke(IpcChannels.OPEN_EXTERNAL_CHANNEL, url),
   showItemInFolder: (path: string) =>
     ipcRenderer.invoke(IpcChannels.SHOW_ITEM_IN_FOLDER_CHANNEL, path),
+  getPathForFile: (file: File) => {
+    try {
+      const filePath = webUtils.getPathForFile(file);
+      return typeof filePath === "string" && filePath.trim().length > 0 ? filePath : null;
+    } catch {
+      return null;
+    }
+  },
+  statPath: (targetPath: string) => {
+    try {
+      const trimmed = targetPath.trim();
+      if (trimmed.length === 0) return null;
+      const st = NodeFS.statSync(trimmed);
+      return { isDirectory: st.isDirectory(), isFile: st.isFile() };
+    } catch {
+      return null;
+    }
+  },
   onMenuAction: (listener) => {
     const wrappedListener = (_event: Electron.IpcRendererEvent, action: unknown) => {
       if (typeof action !== "string") return;

@@ -54,6 +54,11 @@ import {
   makeComposerMentionDragHandlers,
 } from "./composerMentionDrag";
 import {
+  classifyOsDropItem,
+  partitionOsDropItems,
+  readDirectoryEntryFlag,
+} from "./composerOsPathDrop";
+import {
   type ComposerImageAttachment,
   type DraftId,
   type PersistedComposerImageAttachment,
@@ -2489,16 +2494,6 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     }
   };
 
-  const onComposerDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    if (!event.dataTransfer.types.includes("Files")) return;
-    event.preventDefault();
-    dragDepthRef.current = 0;
-    setIsDragOverComposer(false);
-    const files = Array.from(event.dataTransfer.files);
-    void addComposerImages(files);
-    focusComposer();
-  };
-
   const insertComposerTextAtEnd = (
     text: string,
     options?: { ensureLeadingBoundary?: boolean },
@@ -2520,6 +2515,89 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       prompt.length,
       needsLeadingSpace ? ` ${text}` : text,
     );
+  };
+
+  // OS (Finder/Explorer) file drops: folders and non-attachable paths become
+  // path mentions (agent reference locations). Attachable files still import.
+  const onComposerDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) return;
+    event.preventDefault();
+    dragDepthRef.current = 0;
+    setIsDragOverComposer(false);
+
+    const bridge = typeof window !== "undefined" ? window.desktopBridge : undefined;
+    const fileItems = Array.from(event.dataTransfer.items ?? []).filter(
+      (item) => item.kind === "file",
+    );
+
+    type DroppedPair = {
+      file: File;
+      isDirectoryEntry: boolean;
+    };
+    const pairs: DroppedPair[] = [];
+    if (fileItems.length > 0) {
+      for (const item of fileItems) {
+        const file = item.getAsFile();
+        if (!file) continue;
+        pairs.push({
+          file,
+          isDirectoryEntry: readDirectoryEntryFlag(item),
+        });
+      }
+    } else {
+      for (const file of Array.from(event.dataTransfer.files)) {
+        pairs.push({ file, isDirectoryEntry: false });
+      }
+    }
+
+    if (pairs.length === 0) {
+      focusComposer();
+      return;
+    }
+
+    const classified = pairs.map(({ file, isDirectoryEntry }) => {
+      const absolutePath = bridge?.getPathForFile?.(file) ?? null;
+      const stat = absolutePath && bridge?.statPath ? bridge.statPath(absolutePath) : null;
+      return classifyOsDropItem({
+        file,
+        isDirectoryEntry,
+        absolutePath,
+        isDirectoryPath: stat?.isDirectory ?? null,
+      });
+    });
+
+    const { pathMentions, attachableFiles, unsupportedNames } = partitionOsDropItems(
+      classified,
+      gitCwd,
+    );
+
+    if (pathMentions.length > 0) {
+      const mentionText = pathMentions.join(" ");
+      if (!insertComposerTextAtEnd(mentionText, { ensureLeadingBoundary: true })) {
+        toastManager.add({
+          type: "error",
+          title: "Unable to add folder path",
+          description: "The composer is busy; try again once it is ready.",
+        });
+      }
+    }
+
+    if (attachableFiles.length > 0) {
+      void addComposerImages([...attachableFiles]);
+    } else if (pathMentions.length === 0 && unsupportedNames.length > 0) {
+      // Preserve existing unsupported-type errors when nothing else was usable.
+      void addComposerImages(pairs.map((pair) => pair.file));
+    } else if (unsupportedNames.length > 0 && pathMentions.length > 0) {
+      toastManager.add({
+        type: "error",
+        title: "Some items could not be added",
+        description: `Skipped: ${unsupportedNames.slice(0, 3).join(", ")}${
+          unsupportedNames.length > 3 ? "…" : ""
+        }`,
+      });
+    }
+
+    focusComposer();
   };
 
   // File-tree drags land as mentions. Handled in the capture phase so the

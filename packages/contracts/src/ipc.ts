@@ -1038,6 +1038,16 @@ export interface DesktopBridge {
   openExternal: (url: string) => Promise<boolean>;
   /** Reveal a local path in Finder / File Explorer / Files. Desktop only. */
   showItemInFolder?: (path: string) => Promise<void>;
+  /**
+   * Resolve an absolute filesystem path for a File from a native OS drop
+   * (Finder / Explorer). Uses Electron webUtils.getPathForFile. Desktop only.
+   */
+  getPathForFile?: (file: File) => string | null;
+  /**
+   * Lightweight stat for a path resolved from an OS drop. Used to tell folders
+   * from files so directories can become path mentions rather than attachments.
+   */
+  statPath?: (path: string) => { isDirectory: boolean; isFile: boolean } | null;
   onMenuAction: (listener: (action: string) => void) => () => void;
   getWindowFullscreenState: () => boolean;
   onWindowFullscreenStateChange: (listener: (fullscreen: boolean) => void) => () => void;
