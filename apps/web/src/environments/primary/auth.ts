@@ -62,8 +62,30 @@ export class PrimaryEnvironmentRequestError extends Schema.TaggedErrorClass<Prim
   }
 
   override get message(): string {
-    return `Primary environment request failed during ${this.operation} (HTTP ${this.status}).`;
+    const base = `Primary environment request failed during ${this.operation} (HTTP ${this.status}).`;
+    const causeMessage = formatPrimaryEnvironmentCause(this.cause);
+    return causeMessage ? `${base} ${causeMessage}` : base;
   }
+}
+
+function formatPrimaryEnvironmentCause(cause: unknown): string | null {
+  if (cause instanceof Error && cause.message.trim().length > 0) {
+    return cause.message.trim();
+  }
+  if (typeof cause === "string" && cause.trim().length > 0) {
+    return cause.trim();
+  }
+  if (typeof cause === "object" && cause !== null) {
+    const record = cause as { message?: unknown; _tag?: unknown; reason?: unknown };
+    const tag = typeof record._tag === "string" ? record._tag : null;
+    const reason = typeof record.reason === "string" ? record.reason : null;
+    const message = typeof record.message === "string" ? record.message : null;
+    const parts = [tag, reason, message].filter((part): part is string => Boolean(part));
+    if (parts.length > 0) {
+      return parts.join(": ");
+    }
+  }
+  return null;
 }
 
 export const isPrimaryEnvironmentRequestError = Schema.is(PrimaryEnvironmentRequestError);
@@ -276,9 +298,11 @@ async function waitForAuthenticatedSessionAfterBootstrap(): Promise<AuthSessionS
   }
 }
 
-const TRANSIENT_BOOTSTRAP_STATUS_CODES = new Set([502, 503, 504]);
-const BOOTSTRAP_RETRY_TIMEOUT_MS = 15_000;
-const BOOTSTRAP_RETRY_STEP_MS = 500;
+// 500 is included: desktop often maps cold-backend / bearer bootstrap races
+// onto EnvironmentInternalError or a missing status that defaults to 500.
+const TRANSIENT_BOOTSTRAP_STATUS_CODES = new Set([500, 502, 503, 504]);
+const BOOTSTRAP_RETRY_TIMEOUT_MS = 20_000;
+const BOOTSTRAP_RETRY_STEP_MS = 400;
 
 export async function retryTransientBootstrap<T>(operation: () => Promise<T>): Promise<T> {
   const startedAt = Date.now();
@@ -307,11 +331,36 @@ function waitForBootstrapRetry(delayMs: number): Promise<void> {
 
 function isTransientBootstrapError(error: unknown): boolean {
   if (isPrimaryEnvironmentRequestError(error)) {
-    return TRANSIENT_BOOTSTRAP_STATUS_CODES.has(error.status);
+    if (TRANSIENT_BOOTSTRAP_STATUS_CODES.has(error.status)) {
+      return true;
+    }
+    const causeText = formatPrimaryEnvironmentCause(error.cause)?.toLowerCase() ?? "";
+    return (
+      causeText.includes("fetch") ||
+      causeText.includes("timeout") ||
+      causeText.includes("econnrefused") ||
+      causeText.includes("backend") ||
+      causeText.includes("bearer") ||
+      causeText.includes("bootstrap") ||
+      causeText.includes("not configured")
+    );
   }
 
   if (error instanceof TypeError) {
     return true;
+  }
+
+  if (error instanceof Error) {
+    const text = error.message.toLowerCase();
+    return (
+      text.includes("fetch") ||
+      text.includes("timeout") ||
+      text.includes("econnrefused") ||
+      text.includes("backend") ||
+      text.includes("bearer") ||
+      text.includes("bootstrap") ||
+      text.includes("not configured")
+    );
   }
 
   return error instanceof DOMException && error.name === "AbortError";

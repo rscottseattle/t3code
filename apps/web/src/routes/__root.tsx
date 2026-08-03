@@ -260,19 +260,67 @@ function errorMessage(error: unknown): string {
 }
 
 function errorDetails(error: unknown): string {
-  if (error instanceof Error) {
-    return error.stack ?? error.message;
-  }
+  const lines: string[] = [];
+  const seen = new Set<unknown>();
 
-  if (typeof error === "string") {
-    return error;
-  }
+  const walk = (value: unknown, depth: number) => {
+    if (value == null || depth > 6 || seen.has(value)) {
+      return;
+    }
+    if (typeof value === "object") {
+      seen.add(value);
+    }
 
-  try {
-    return JSON.stringify(error, null, 2);
-  } catch {
-    return "No additional error details are available.";
-  }
+    if (value instanceof Error) {
+      lines.push(value.stack ?? `${value.name}: ${value.message}`);
+      const record = value as Error & { cause?: unknown };
+      if (record.cause !== undefined) {
+        lines.push("Caused by:");
+        walk(record.cause, depth + 1);
+      }
+      return;
+    }
+
+    if (typeof value === "string") {
+      lines.push(value);
+      return;
+    }
+
+    if (typeof value === "object") {
+      const record = value as {
+        message?: unknown;
+        _tag?: unknown;
+        reason?: unknown;
+        cause?: unknown;
+      };
+      const summary = [
+        typeof record._tag === "string" ? record._tag : null,
+        typeof record.reason === "string" ? record.reason : null,
+        typeof record.message === "string" ? record.message : null,
+      ]
+        .filter((part): part is string => Boolean(part))
+        .join(": ");
+      if (summary.length > 0) {
+        lines.push(summary);
+      } else {
+        try {
+          lines.push(JSON.stringify(value, null, 2));
+        } catch {
+          lines.push(String(value));
+        }
+      }
+      if (record.cause !== undefined) {
+        lines.push("Caused by:");
+        walk(record.cause, depth + 1);
+      }
+      return;
+    }
+
+    lines.push(String(value));
+  };
+
+  walk(error, 0);
+  return lines.length > 0 ? lines.join("\n") : "No additional error details are available.";
 }
 
 function AuthenticatedTracingBootstrap() {
