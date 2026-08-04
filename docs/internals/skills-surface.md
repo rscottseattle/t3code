@@ -7,9 +7,13 @@ T3r exposes the skills reported by every configured agent application in a searc
 ## User experience
 
 1. Open **Skills** from the right-panel surface menu.
-2. Browse category-first groups or search by skill name, description, category, provider, scope, or source path.
-3. Click a card to add it at the end of the current prompt, or drag it to an exact position in the composer.
-4. See application badges on each card when the same skill is available from one or more agent providers.
+2. Review the always-visible category totals above search.
+3. Search by skill name, description, category, provider, scope, or source path.
+4. Click a collapsed category row to reveal its matching skills.
+5. Click a card to add it at the end of the current prompt, or drag it to an exact position in the composer.
+6. See application badges on each card when the same skill is available from one or more agent providers.
+
+All category rows start collapsed so the catalog remains scannable even with a large number of installed skills. Each row shows its current result count and can be expanded or collapsed independently.
 
 The first catalog uses these stable work categories:
 
@@ -60,7 +64,7 @@ The surface is available in the desktop and web right-panel layouts, including t
 1. Fast-forward the T3r branch to its latest origin commit.
 2. Merge current `upstream/main`, preserving T3r's product identity and stable Electron data directories.
 3. Add the normalized catalog, right-panel surface state, panel UI, and composer click/drag integration.
-4. Bump the coordinated desktop, server, and web version to `0.0.39`.
+4. Bump the coordinated desktop, server, and web version to `0.0.40`.
 5. Produce the macOS arm64 desktop artifact, install it over the closed app, and push the integrated branch.
 
 ## Follow-on decisions

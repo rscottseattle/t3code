@@ -1,6 +1,6 @@
 import type { ServerProvider } from "@t3tools/contracts";
-import { GripVertical, Search, Sparkles } from "lucide-react";
-import { memo, type DragEvent, useDeferredValue, useMemo, useState } from "react";
+import { ChevronRight, GripVertical, Search, Sparkles } from "lucide-react";
+import { memo, type DragEvent, useCallback, useDeferredValue, useMemo, useState } from "react";
 
 import { COMPOSER_MENTION_DRAG_TYPE } from "~/components/chat/composerMentionDrag";
 import { Badge } from "~/components/ui/badge";
@@ -11,6 +11,7 @@ import {
   filterSkillCatalog,
   formatSkillComposerInsertion,
   SKILL_CATEGORIES,
+  type SkillCategoryId,
   type SkillCatalogEntry,
 } from "~/providerSkillCatalog";
 import { cn } from "~/lib/utils";
@@ -100,8 +101,23 @@ const SkillCard = memo(function SkillCard(props: {
 
 export function SkillsPanel(props: SkillsPanelProps) {
   const [query, setQuery] = useState("");
+  const [expandedCategoryIds, setExpandedCategoryIds] = useState<Set<SkillCategoryId>>(
+    () => new Set(),
+  );
   const deferredQuery = useDeferredValue(query);
   const catalog = useMemo(() => buildProviderSkillCatalog(props.providers), [props.providers]);
+  const categoryTotals = useMemo(() => {
+    const counts = new Map<SkillCategoryId, number>(
+      SKILL_CATEGORIES.map((category) => [category.id, 0] as const),
+    );
+    for (const skill of catalog) {
+      counts.set(skill.category, (counts.get(skill.category) ?? 0) + 1);
+    }
+    return SKILL_CATEGORIES.map((category) => ({
+      ...category,
+      count: counts.get(category.id) ?? 0,
+    }));
+  }, [catalog]);
   const filteredCatalog = useMemo(
     () => filterSkillCatalog(catalog, deferredQuery),
     [catalog, deferredQuery],
@@ -118,6 +134,17 @@ export function SkillsPanel(props: SkillsPanelProps) {
       return skills.length > 0 ? [{ ...category, skills }] : [];
     });
   }, [filteredCatalog]);
+  const toggleCategory = useCallback((categoryId: SkillCategoryId) => {
+    setExpandedCategoryIds((current) => {
+      const next = new Set(current);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  }, []);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-background">
@@ -130,6 +157,17 @@ export function SkillsPanel(props: SkillsPanelProps) {
             </p>
           </div>
           <Badge variant="secondary">{catalog.length}</Badge>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Skill totals by category">
+          {categoryTotals.map((category) => (
+            <span
+              key={category.id}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border/70 bg-muted/35 px-2 py-1 text-[11px] text-muted-foreground"
+            >
+              <span>{category.label}</span>
+              <span className="font-semibold tabular-nums text-foreground">{category.count}</span>
+            </span>
+          ))}
         </div>
         <label className="relative mt-3 block">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 z-10 size-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -147,25 +185,51 @@ export function SkillsPanel(props: SkillsPanelProps) {
 
       <ScrollArea className="min-h-0 flex-1">
         {groups.length > 0 ? (
-          <div className="space-y-5 p-4">
-            {groups.map((group) => (
-              <section key={group.id} aria-labelledby={`skill-category-${group.id}`}>
-                <div className="mb-2 flex items-center gap-2">
-                  <h3
-                    id={`skill-category-${group.id}`}
-                    className="text-xs font-semibold tracking-wide text-foreground uppercase"
-                  >
-                    {group.label}
+          <div className="space-y-2 p-4">
+            {groups.map((group) => {
+              const expanded = expandedCategoryIds.has(group.id);
+              const contentId = `skill-category-content-${group.id}`;
+              return (
+                <section key={group.id} aria-labelledby={`skill-category-${group.id}`}>
+                  <h3>
+                    <button
+                      type="button"
+                      aria-expanded={expanded}
+                      aria-controls={contentId}
+                      onClick={() => toggleCategory(group.id)}
+                      className="flex w-full items-center gap-2 rounded-lg border border-border/70 bg-card px-3 py-2.5 text-left transition hover:border-border hover:bg-accent/55"
+                    >
+                      <ChevronRight
+                        className={cn(
+                          "size-4 shrink-0 text-muted-foreground transition-transform",
+                          expanded && "rotate-90",
+                        )}
+                      />
+                      <span
+                        id={`skill-category-${group.id}`}
+                        className="min-w-0 flex-1 truncate text-xs font-semibold tracking-wide text-foreground uppercase"
+                      >
+                        {group.label}
+                      </span>
+                      <Badge size="sm" variant="secondary">
+                        {group.skills.length}
+                      </Badge>
+                    </button>
                   </h3>
-                  <span className="text-[11px] text-muted-foreground">{group.skills.length}</span>
-                </div>
-                <div className="space-y-2">
-                  {group.skills.map((skill) => (
-                    <SkillCard key={skill.id} skill={skill} onInsertSkill={props.onInsertSkill} />
-                  ))}
-                </div>
-              </section>
-            ))}
+                  {expanded ? (
+                    <div id={contentId} className="mt-2 space-y-2">
+                      {group.skills.map((skill) => (
+                        <SkillCard
+                          key={skill.id}
+                          skill={skill}
+                          onInsertSkill={props.onInsertSkill}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                </section>
+              );
+            })}
           </div>
         ) : (
           <div className="flex min-h-64 flex-col items-center justify-center px-8 text-center">
