@@ -1,6 +1,15 @@
 import type { ContextMenuItem, PreviewSessionSnapshot } from "@t3tools/contracts";
 import { getTerminalLabel } from "@t3tools/shared/terminalLabels";
-import { ClipboardList, FileDiff, Files, Globe2, Plus, TerminalSquare, X } from "lucide-react";
+import {
+  ClipboardList,
+  FileDiff,
+  Files,
+  Globe2,
+  Plus,
+  Sparkles,
+  TerminalSquare,
+  X,
+} from "lucide-react";
 import {
   type MouseEvent as ReactMouseEvent,
   type ReactElement,
@@ -44,6 +53,7 @@ interface RightPanelTabsProps {
   onAddTerminal: () => void;
   onAddDiff: () => void;
   onAddFiles: () => void;
+  onAddSkills: () => void;
   browserAvailable: boolean;
   diffAvailable: boolean;
   filesAvailable: boolean;
@@ -91,6 +101,7 @@ function RightPanelEmptyState(props: {
   onAddTerminal: () => void;
   onAddDiff: () => void;
   onAddFiles: () => void;
+  onAddSkills: () => void;
   browserAvailable: boolean;
   diffAvailable: boolean;
   filesAvailable: boolean;
@@ -119,6 +130,14 @@ function RightPanelEmptyState(props: {
       available: props.filesAvailable,
       disabledReason: SURFACE_DISABLED_REASONS.files,
       onClick: props.onAddFiles,
+    },
+    {
+      label: "Skills",
+      description: "Browse skills from your agent applications.",
+      icon: Sparkles,
+      available: true,
+      disabledReason: null,
+      onClick: props.onAddSkills,
     },
     {
       label: "Diff",
@@ -205,6 +224,8 @@ function surfaceTitle(
       );
     case "plan":
       return "Plan";
+    case "skills":
+      return "Skills";
     case "preview": {
       const snapshot = surface.resourceId ? sessions[surface.resourceId] : null;
       if (!snapshot || snapshot.navStatus._tag === "Idle") return "Browser";
@@ -266,6 +287,8 @@ function SurfaceIcon({
       return <TerminalSquare className="size-3.5 shrink-0" />;
     case "plan":
       return <ClipboardList className="size-3.5 shrink-0" />;
+    case "skills":
+      return <Sparkles className="size-3.5 shrink-0" />;
   }
 }
 
@@ -463,6 +486,10 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
                     <Files />
                     Files
                   </SurfaceMenuItem>
+                  <SurfaceMenuItem available onClick={props.onAddSkills}>
+                    <Sparkles />
+                    Skills
+                  </SurfaceMenuItem>
                   <SurfaceMenuItem
                     available={props.diffAvailable}
                     disabledReason={SURFACE_DISABLED_REASONS.diff}
@@ -485,6 +512,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             onAddTerminal={props.onAddTerminal}
             onAddDiff={props.onAddDiff}
             onAddFiles={props.onAddFiles}
+            onAddSkills={props.onAddSkills}
             browserAvailable={props.browserAvailable}
             diffAvailable={props.diffAvailable}
             filesAvailable={props.filesAvailable}

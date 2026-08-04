@@ -124,6 +124,7 @@ import {
   type RightPanelSurface,
   useRightPanelStore,
 } from "../rightPanelStore";
+import { formatSkillComposerInsertion, type SkillCatalogEntry } from "../providerSkillCatalog";
 import {
   isPreviewSupportedInRuntime,
   setActivePreviewTab,
@@ -139,6 +140,7 @@ import {
   usePreviewMiniPlayerStore,
 } from "../previewMiniPlayerStore";
 import { RightPanelTabs } from "./RightPanelTabs";
+import { SkillsPanel } from "./SkillsPanel";
 import { DiffWorkerPoolProvider } from "./DiffWorkerPoolProvider";
 import { BranchToolbar } from "./BranchToolbar";
 import { resolveShortcutCommand, shortcutLabelForCommand } from "../keybindings";
@@ -3145,6 +3147,27 @@ function ChatViewContent(props: ChatViewProps) {
     if (!activeThreadRef || !activeProject) return;
     useRightPanelStore.getState().open(activeThreadRef, "files");
   }, [activeProject, activeThreadRef]);
+  const addSkillsSurface = useCallback(() => {
+    if (!activeThreadRef) return;
+    useRightPanelStore.getState().open(activeThreadRef, "skills");
+  }, [activeThreadRef]);
+  const insertSkillFromSurface = useCallback(
+    (skill: SkillCatalogEntry) => {
+      const inserted =
+        composerRef.current?.insertTextAtEnd(`${formatSkillComposerInsertion(skill)} `, {
+          ensureLeadingBoundary: true,
+        }) ?? false;
+      if (inserted) return;
+      toastManager.add(
+        stackedThreadToast({
+          type: "error",
+          title: "Could not add skill",
+          description: "The composer is not ready for skill insertion.",
+        }),
+      );
+    },
+    [composerRef],
+  );
   const openFileSurface = useCallback(
     (relativePath: string) => {
       if (!activeThreadRef || !activeProject) return;
@@ -5720,6 +5743,11 @@ function ChatViewContent(props: ChatViewProps) {
         timestampFormat={timestampFormat}
         mode="embedded"
       />
+    ) : activeRightPanelSurface?.kind === "skills" ? (
+      <SkillsPanel
+        providers={providerStatuses as ServerProvider[]}
+        onInsertSkill={insertSkillFromSurface}
+      />
     ) : (activeRightPanelSurface?.kind === "files" || activeRightPanelSurface?.kind === "file") &&
       activeProject &&
       activeWorkspaceRoot ? (
@@ -6151,6 +6179,7 @@ function ChatViewContent(props: ChatViewProps) {
           onAddTerminal={addTerminalSurface}
           onAddDiff={addDiffSurface}
           onAddFiles={addFilesSurface}
+          onAddSkills={addSkillsSurface}
           browserAvailable={isPreviewSupportedInRuntime()}
           diffAvailable={isServerThread && isGitRepo}
           filesAvailable={activeProject !== null}
@@ -6178,6 +6207,7 @@ function ChatViewContent(props: ChatViewProps) {
             onAddTerminal={addTerminalSurface}
             onAddDiff={addDiffSurface}
             onAddFiles={addFilesSurface}
+            onAddSkills={addSkillsSurface}
             browserAvailable={isPreviewSupportedInRuntime()}
             diffAvailable={isServerThread && isGitRepo}
             filesAvailable={activeProject !== null}
