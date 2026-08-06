@@ -2572,7 +2572,10 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     );
 
     if (pathMentions.length > 0) {
-      const mentionText = pathMentions.join(" ");
+      // Trailing space matters: the inline-token recognizer only chips a
+      // mention followed by whitespace, so without it the raw markdown link
+      // (full path included) stays visible until the user types.
+      const mentionText = `${pathMentions.join(" ")} `;
       if (!insertComposerTextAtEnd(mentionText, { ensureLeadingBoundary: true })) {
         toastManager.add({
           type: "error",

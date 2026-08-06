@@ -95,6 +95,35 @@ describe("classifyOsDropItem", () => {
     expect(result).toEqual({ kind: "attachable-file", file, name: "notes.md" });
   });
 
+  it("attaches images even when a desktop path is available", () => {
+    const file = fakeFile("screenshot.png", "image/png", 2048);
+    const result = classifyOsDropItem({
+      file,
+      isDirectoryEntry: false,
+      absolutePath: "/Users/ryan/Desktop/screenshot.png",
+    });
+    expect(result).toEqual({ kind: "attachable-file", file, name: "screenshot.png" });
+  });
+
+  it("attaches images recognized by extension when the browser omits the MIME type", () => {
+    const file = fakeFile("photo.heic", "", 2048);
+    const result = classifyOsDropItem({
+      file,
+      isDirectoryEntry: false,
+      absolutePath: "/Users/ryan/Desktop/photo.heic",
+    });
+    expect(result).toEqual({ kind: "attachable-file", file, name: "photo.heic" });
+  });
+
+  it("keeps directories with image-like names as path mentions", () => {
+    const result = classifyOsDropItem({
+      file: fakeFile("assets.png"),
+      isDirectoryEntry: true,
+      absolutePath: "/Users/ryan/proj/assets.png",
+    });
+    expect(result.kind).toBe("path-mention");
+  });
+
   it("turns MP3 files with a desktop path into path mentions", () => {
     const result = classifyOsDropItem({
       file: fakeFile("interview.mp3", "audio/mpeg", 64),

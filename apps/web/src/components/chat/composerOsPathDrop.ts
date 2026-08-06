@@ -1,4 +1,4 @@
-import { isAttachableComposerFile } from "@t3tools/shared/chatAttachments";
+import { isAttachableComposerFile, isImageAttachment } from "@t3tools/shared/chatAttachments";
 import {
   isWindowsAbsolutePath,
   isUncPath,
@@ -9,8 +9,9 @@ import { serializeComposerFileLink } from "@t3tools/shared/composerTrigger";
 
 /**
  * Native desktop drops should become path *references* for the agent — not
- * copied content attachments. File-tree drags already use a custom mention
- * MIME type; this module covers Finder/Explorer filesystem drops.
+ * copied content attachments — except images, which attach as pictures so the
+ * model can see them. File-tree drags already use a custom mention MIME type;
+ * this module covers Finder/Explorer filesystem drops.
  */
 
 export type OsDropItemKind = "path-mention" | "attachable-file" | "unsupported";
@@ -107,12 +108,21 @@ export function serializeOsPathMention(
 /**
  * Classify one dropped OS file/folder for the composer.
  *
- * Any item with a desktop-resolved path → path mention.
+ * Images → attachment, even with a desktop-resolved path, so the model sees
+ * the picture itself rather than a path reference.
+ * Any other item with a desktop-resolved path → path mention.
  * Attachable browser files without a local path → attachment.
  * Everything else → unsupported (existing toast path).
  */
 export function classifyOsDropItem(input: ClassifyOsDropItemInput): OsDropItem {
   const name = input.file.name || "item";
+  if (
+    !input.isDirectoryEntry &&
+    isImageAttachment({ mimeType: input.file.type, fileName: input.file.name })
+  ) {
+    return { kind: "attachable-file", file: input.file, name };
+  }
+
   if (input.absolutePath && input.absolutePath.trim().length > 0) {
     return {
       kind: "path-mention",
