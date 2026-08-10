@@ -13,6 +13,7 @@ const APP_SKIN_VALUES = [
   "charcoal-frost",
   "charcoal-ember",
   "glass-aurora",
+  "keygen-98",
 ] as const;
 
 export const AppSkin = Schema.Literals(APP_SKIN_VALUES);
@@ -53,6 +54,11 @@ const SKIN_OPTIONS: ReadonlyArray<{ value: AppSkin; label: string; description: 
     value: "glass-aurora",
     label: "Glass Aurora",
     description: "Deep purple–blue gradients; frosted glass panels over a shiny aurora.",
+  },
+  {
+    value: "keygen-98",
+    label: "Keygen 98",
+    description: "Windows 9x chrome, black terminal panels, and neon phosphor accents.",
   },
   {
     value: "default",

@@ -1065,7 +1065,8 @@ export function AppearanceSettingsPanel() {
                   value === "charcoal-graphite" ||
                   value === "charcoal-frost" ||
                   value === "charcoal-ember" ||
-                  value === "glass-aurora"
+                  value === "glass-aurora" ||
+                  value === "keygen-98"
                 ) {
                   setSkin(value as AppSkin);
                 }

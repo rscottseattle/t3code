@@ -13,6 +13,7 @@ import "@fontsource/jetbrains-mono/500.css";
 import "./index.css";
 import "./skins/charcoal-skins.css";
 import "./skins/glass-aurora.css";
+import "./skins/keygen-98.css";
 import { bootstrapSkin } from "./hooks/useSkin";
 import { bootstrapUiFont } from "./hooks/useUiFont";
 import { isElectron } from "./env";

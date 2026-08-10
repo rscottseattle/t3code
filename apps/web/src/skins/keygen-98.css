@@ -1,0 +1,624 @@
+/**
+ * Keygen 98 — Windows 9x utility chrome around black phosphor panels.
+ * Activate: html.dark[data-skin="keygen-98"]
+ *
+ * The skin is deliberately static: the period character comes from hard
+ * bevels, scanlines, square geometry, and a restricted neon palette rather
+ * than continuous CRT effects that would add idle GPU cost.
+ */
+
+html.dark[data-skin="keygen-98"] {
+  color-scheme: dark;
+
+  --radius: 0.25rem;
+  --control-radius: 0.125rem;
+  --background: #030604;
+  --app-chrome-background: #a8aaa8;
+  --surface-raised: #090e0a;
+  --foreground: #e8eee6;
+  --card: #050806;
+  --card-foreground: #dfffd8;
+  --popover: #b8bab8;
+  --popover-foreground: #050705;
+  --primary: #59ee39;
+  --primary-foreground: #020500;
+  --secondary: #111812;
+  --secondary-foreground: #75ff57;
+  --muted: #0d140f;
+  --muted-foreground: #62bfa1;
+  --accent: #173820;
+  --accent-foreground: #71ff55;
+  --destructive: #ff43b9;
+  --destructive-foreground: #ff8fd7;
+  --border: #536056;
+  --input: #727a72;
+  --ring: #68ff49;
+  --info: #3bdde7;
+  --info-foreground: #67f5ff;
+  --success: #58ef38;
+  --success-foreground: #7dff60;
+  --warning: #e8dc4c;
+  --warning-foreground: #fff36a;
+  --sidebar: #030604;
+  --sidebar-foreground: #a9ff96;
+  --sidebar-muted-foreground: #55bda5;
+  --sidebar-control-surface: #111712;
+  --sidebar-row-hover: #102717;
+  --sidebar-row-active: #173b20;
+  --sidebar-row-selected: #142f1a;
+  --sidebar-border: #6b716b;
+  --sidebar-stage-fade: #030604;
+  --glass-blur: 0px;
+  --glass-opacity: 100%;
+  --glass-saturation: 1;
+  --app-scrollbar-width: 14px;
+  --app-scrollbar-thumb: #909490;
+  --app-scrollbar-thumb-hover: #c2c4c2;
+  --pane-divider: #8e928e;
+  --chat-composer-glass-surface: #050806;
+  --chat-composer-outline: #767b76;
+  --surface-grain: none;
+  --font-sans:
+    "JetBrains Mono", "SF Mono", "SFMono-Regular", Monaco, Consolas, "Liberation Mono", monospace;
+  --font-mono:
+    "JetBrains Mono", "SF Mono", "SFMono-Regular", Monaco, Consolas, "Liberation Mono", monospace;
+
+  --keygen-chrome: #b8bab8;
+  --keygen-chrome-light: #f0f1f0;
+  --keygen-chrome-mid: #949794;
+  --keygen-chrome-dark: #363936;
+  --keygen-black: #020403;
+  --keygen-green: #62f344;
+  --keygen-cyan: #55e5eb;
+  --keygen-magenta: #ee62dd;
+  --keygen-scanlines: repeating-linear-gradient(
+    to bottom,
+    rgb(100 255 85 / 2.5%) 0,
+    rgb(100 255 85 / 2.5%) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  --keygen-outset:
+    inset 1px 1px 0 var(--keygen-chrome-light), inset -1px -1px 0 var(--keygen-chrome-dark),
+    1px 1px 0 #050505;
+  --keygen-inset: inset 1px 1px 0 #111411, inset -1px -1px 0 #d5d7d5;
+
+  background: var(--keygen-chrome);
+  font-variant-ligatures: none;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: none;
+}
+
+html.dark[data-skin="keygen-98"] body {
+  background-color: var(--keygen-chrome);
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgb(255 255 255 / 4%) 0,
+    rgb(255 255 255 / 4%) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  color: var(--foreground);
+  letter-spacing: 0.0125em;
+}
+
+html.dark[data-skin="keygen-98"] #root {
+  background: var(--keygen-chrome);
+  box-shadow:
+    inset 1px 1px 0 var(--keygen-chrome-light),
+    inset -2px -2px 0 var(--keygen-chrome-dark);
+}
+
+/* Black work surfaces retain a very faint, static phosphor scanline. */
+html.dark[data-skin="keygen-98"] main[data-slot="sidebar-inset"],
+html.dark[data-skin="keygen-98"] [data-slot="sidebar-inner"],
+html.dark[data-skin="keygen-98"] [data-chat-column-maximized-away] {
+  background-color: var(--background) !important;
+  background-image: var(--keygen-scanlines) !important;
+}
+
+/* Title bars: silver 9x chrome, black labels, and a hard recessed lower edge. */
+html.dark[data-skin="keygen-98"] .workspace-topbar,
+html.dark[data-skin="keygen-98"] [data-slot="sidebar-header"] {
+  background-color: var(--keygen-chrome) !important;
+  background-image: linear-gradient(
+    to bottom,
+    #d9dbd9 0,
+    #c4c6c4 48%,
+    #a6a9a6 49%,
+    #b7b9b7 100%
+  ) !important;
+  border-bottom: 2px ridge #787c78 !important;
+  color: #080a08 !important;
+  box-shadow:
+    inset 1px 1px 0 #f7f8f7,
+    inset -1px 0 0 #505450;
+}
+
+html.dark[data-skin="keygen-98"] .workspace-topbar *,
+html.dark[data-skin="keygen-98"] [data-slot="sidebar-header"] * {
+  color: #080a08 !important;
+  text-shadow: 1px 1px 0 rgb(255 255 255 / 58%);
+}
+
+html.dark[data-skin="keygen-98"] .sidebar-stage-backdrop {
+  display: none;
+}
+
+html.dark[data-skin="keygen-98"] .sidebar-brand {
+  overflow: visible;
+  border-radius: 0;
+}
+
+html.dark[data-skin="keygen-98"] .sidebar-brand span {
+  font-size: 0;
+}
+
+html.dark[data-skin="keygen-98"] .sidebar-brand span::before {
+  content: "☠︎  T3r KEYGEN 98";
+  color: #0b500a !important;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+  text-shadow: 1px 1px 0 #dcffda;
+}
+
+/* Sidebar and pane frames. */
+html.dark[data-skin="keygen-98"] [data-sidebar-version="v1"],
+html.dark[data-skin="keygen-98"] [data-sidebar-version="v2"] {
+  --background: #030604;
+  --foreground: #e8eee6;
+  --card: #030604;
+  --card-foreground: #dfffd8;
+  --accent: #173820;
+  --accent-foreground: #71ff55;
+  --muted: #0d140f;
+  --muted-foreground: #62bfa1;
+  --border: #536056;
+  --input: #727a72;
+  --sidebar: #030604;
+  --sidebar-foreground: #a9ff96;
+  --sidebar-muted-foreground: #55bda5;
+  --sidebar-control-surface: #111712;
+  --sidebar-row-hover: #102717;
+  --sidebar-row-active: #173b20;
+  --sidebar-row-selected: #142f1a;
+  --sidebar-border: #6b716b;
+  --sidebar-stage-fade: #030604;
+  background: var(--background) var(--keygen-scanlines);
+}
+
+html.dark[data-skin="keygen-98"] [data-slot="sidebar-container"] {
+  border-right: 3px ridge var(--keygen-chrome) !important;
+  background: var(--background) !important;
+  box-shadow: inset -1px 0 0 #111 !important;
+}
+
+html.dark[data-skin="keygen-98"] [data-slot="sidebar-inner"] {
+  box-shadow:
+    inset 2px 0 0 #141914,
+    inset -1px 0 0 #000;
+}
+
+html.dark[data-skin="keygen-98"] [data-testid="sidebar-v2-row-card"],
+html.dark[data-skin="keygen-98"] [data-testid="sidebar-v2-row-slim"],
+html.dark[data-skin="keygen-98"] [data-slot="sidebar-menu-button"] {
+  border-radius: 0 !important;
+  border: 1px solid transparent;
+  color: var(--sidebar-muted-foreground);
+  text-shadow: 0 0 5px rgb(89 238 57 / 18%);
+}
+
+html.dark[data-skin="keygen-98"] [data-testid="sidebar-v2-row-card"] {
+  border-color: #26352a;
+  background: #050906;
+  box-shadow:
+    inset 1px 1px 0 #101a12,
+    inset -1px -1px 0 #000;
+}
+
+html.dark[data-skin="keygen-98"] [data-testid="sidebar-v2-row-card"]:hover,
+html.dark[data-skin="keygen-98"] [data-testid="sidebar-v2-row-slim"]:hover,
+html.dark[data-skin="keygen-98"] [data-slot="sidebar-menu-button"]:hover,
+html.dark[data-skin="keygen-98"] [data-slot="sidebar-menu-button"][data-active="true"] {
+  border-color: #457f4e;
+  background: #102717 !important;
+  color: var(--keygen-green);
+}
+
+html.dark[data-skin="keygen-98"] [data-slot="sidebar-footer"] {
+  border-top: 3px ridge var(--keygen-chrome);
+  background: #050806;
+}
+
+html.dark[data-skin="keygen-98"] [class*="border-l"] {
+  border-left-width: 3px !important;
+  border-left-style: ridge !important;
+  border-left-color: var(--keygen-chrome) !important;
+}
+
+html.dark[data-skin="keygen-98"] [role="separator"][aria-orientation="vertical"] > span {
+  width: 3px !important;
+  background: var(--keygen-chrome) !important;
+  box-shadow:
+    inset 1px 0 0 #e6e7e6,
+    inset -1px 0 0 #3f433f;
+}
+
+/* Raised utility controls. */
+html.dark[data-skin="keygen-98"] [data-slot="button"],
+html.dark[data-skin="keygen-98"] [data-slot="select-trigger"],
+html.dark[data-skin="keygen-98"] [data-slot="select-button"],
+html.dark[data-skin="keygen-98"] [data-slot="toggle"] {
+  border: 1px solid #1f221f !important;
+  border-radius: 2px !important;
+  background: linear-gradient(to bottom, #d3d5d3, #9da09d) !important;
+  color: #050705 !important;
+  box-shadow: var(--keygen-outset) !important;
+  text-shadow: 1px 1px 0 rgb(255 255 255 / 52%);
+}
+
+html.dark[data-skin="keygen-98"] [data-slot="button"]:not(:disabled):active,
+html.dark[data-skin="keygen-98"] [data-slot="button"][data-pressed],
+html.dark[data-skin="keygen-98"] [data-slot="toggle"][data-pressed] {
+  background: #999c99 !important;
+  box-shadow:
+    inset 1px 1px 0 #3b3e3b,
+    inset -1px -1px 0 #e8e9e8 !important;
+  translate: 1px 1px;
+}
+
+html.dark[data-skin="keygen-98"] [data-slot="button"][class~="bg-primary"] {
+  border-color: #0d300a !important;
+  background: linear-gradient(to bottom, #7dff5b, #43c92c) !important;
+  color: #041003 !important;
+}
+
+html.dark[data-skin="keygen-98"] [data-slot="button"][class~="bg-destructive"] {
+  border-color: #4b103b !important;
+  background: linear-gradient(to bottom, #ff8bdb, #d63eaa) !important;
+  color: #210019 !important;
+}
+
+html.dark[data-skin="keygen-98"] [data-slot="button"] svg,
+html.dark[data-skin="keygen-98"] [data-slot="select-trigger"] svg,
+html.dark[data-skin="keygen-98"] [data-slot="select-button"] svg {
+  color: currentColor !important;
+  opacity: 1 !important;
+}
+
+/* Recessed inputs and terminal-like edit fields. */
+html.dark[data-skin="keygen-98"] [data-slot="input-control"],
+html.dark[data-skin="keygen-98"] [data-slot="input-group"],
+html.dark[data-skin="keygen-98"] [data-slot="textarea-control"],
+html.dark[data-skin="keygen-98"] [data-slot="combobox-chips"] {
+  border: 2px inset var(--keygen-chrome) !important;
+  border-radius: 0 !important;
+  background: #020503 !important;
+  color: var(--keygen-green) !important;
+  box-shadow: var(--keygen-inset) !important;
+}
+
+html.dark[data-skin="keygen-98"] input,
+html.dark[data-skin="keygen-98"] textarea,
+html.dark[data-skin="keygen-98"] [contenteditable="true"] {
+  color: #86ff6d !important;
+  caret-color: var(--keygen-green);
+  font-family: var(--font-mono);
+}
+
+html.dark[data-skin="keygen-98"] input::placeholder,
+html.dark[data-skin="keygen-98"] textarea::placeholder,
+html.dark[data-skin="keygen-98"] [data-placeholder] {
+  color: #428a52 !important;
+  opacity: 1;
+}
+
+html.dark[data-skin="keygen-98"] [data-slot="switch"],
+html.dark[data-skin="keygen-98"] [data-slot="checkbox"],
+html.dark[data-skin="keygen-98"] [data-slot="radio"] {
+  border-radius: 0 !important;
+  border: 2px inset var(--keygen-chrome) !important;
+  background: #050805 !important;
+  box-shadow: none !important;
+}
+
+html.dark[data-skin="keygen-98"] [data-slot="switch"][data-checked],
+html.dark[data-skin="keygen-98"] [data-slot="checkbox"][data-checked],
+html.dark[data-skin="keygen-98"] [data-slot="radio"][data-checked] {
+  background: var(--keygen-green) !important;
+  color: #020502 !important;
+}
+
+/* Cards and dialogs read as black modules mounted into a gray case. */
+html.dark[data-skin="keygen-98"] [data-slot="card"],
+html.dark[data-skin="keygen-98"] [data-slot="card-frame"],
+html.dark[data-skin="keygen-98"] [data-slot="dialog-popup"],
+html.dark[data-skin="keygen-98"] [data-slot="alert-dialog-popup"],
+html.dark[data-skin="keygen-98"] [data-slot="sheet-popup"] {
+  border: 3px ridge var(--keygen-chrome) !important;
+  border-radius: 0 !important;
+  background: #050806 var(--keygen-scanlines) !important;
+  box-shadow:
+    3px 3px 0 #010201,
+    inset 1px 1px 0 #1a241b !important;
+}
+
+html.dark[data-skin="keygen-98"] [data-slot="card"]::before,
+html.dark[data-skin="keygen-98"] [data-slot="card-frame"]::before {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+html.dark[data-skin="keygen-98"] [data-slot="dialog-header"],
+html.dark[data-skin="keygen-98"] [data-slot="alert-dialog-header"],
+html.dark[data-skin="keygen-98"] [data-slot="sheet-header"] {
+  border-bottom: 2px ridge var(--keygen-chrome);
+  background: linear-gradient(to right, #17471d, #080c09);
+  color: var(--keygen-green);
+}
+
+/* Portaled menus deliberately switch to classic gray chrome. */
+html.dark[data-skin="keygen-98"] [data-slot="menu-popup"],
+html.dark[data-skin="keygen-98"] [data-slot="select-popup"],
+html.dark[data-skin="keygen-98"] [data-slot="popover-popup"],
+html.dark[data-skin="keygen-98"] [data-slot="combobox-popup"],
+html.dark[data-skin="keygen-98"] [data-slot="autocomplete-popup"] {
+  --foreground: #050705;
+  --muted-foreground: #343934;
+  --accent: #10351a;
+  --accent-foreground: #79ff62;
+  --border: #666a66;
+  border: 3px outset var(--keygen-chrome) !important;
+  border-radius: 0 !important;
+  background: var(--keygen-chrome) !important;
+  background-image: none !important;
+  color: #050705 !important;
+  box-shadow: 3px 3px 0 rgb(0 0 0 / 78%) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html.dark[data-skin="keygen-98"] [data-slot="menu-item"],
+html.dark[data-skin="keygen-98"] [data-slot="menu-checkbox-item"],
+html.dark[data-skin="keygen-98"] [data-slot="menu-radio-item"],
+html.dark[data-skin="keygen-98"] [data-slot="select-item"],
+html.dark[data-skin="keygen-98"] [data-slot="combobox-item"],
+html.dark[data-skin="keygen-98"] [data-slot="autocomplete-item"] {
+  border-radius: 0 !important;
+  color: #050705;
+}
+
+html.dark[data-skin="keygen-98"] [data-slot="menu-item"][data-highlighted],
+html.dark[data-skin="keygen-98"] [data-slot="menu-checkbox-item"][data-highlighted],
+html.dark[data-skin="keygen-98"] [data-slot="menu-radio-item"][data-highlighted],
+html.dark[data-skin="keygen-98"] [data-slot="select-item"][data-highlighted],
+html.dark[data-skin="keygen-98"] [data-slot="combobox-item"][data-highlighted],
+html.dark[data-skin="keygen-98"] [data-slot="autocomplete-item"][data-highlighted] {
+  background: #092b16 !important;
+  color: #7dff65 !important;
+}
+
+html.dark[data-skin="keygen-98"] [data-slot="tooltip-popup"] {
+  border: 1px solid #65836a !important;
+  border-radius: 0 !important;
+  background: #020503 !important;
+  color: var(--keygen-cyan) !important;
+  box-shadow: 2px 2px 0 #000 !important;
+}
+
+/* The composer becomes the serial-entry panel from the reference. */
+html.dark[data-skin="keygen-98"] .chat-composer-glass,
+html.dark[data-skin="keygen-98"] .chat-composer-glass-shell {
+  --chat-composer-glass-surface: #050806;
+  --chat-composer-outline: #737873;
+  --chat-composer-highlight: transparent;
+  border-radius: 0 !important;
+  background: #050806 !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html.dark[data-skin="keygen-98"] .chat-composer-glass-shell::before {
+  inset: -3px;
+  border: 3px ridge var(--keygen-chrome);
+  border-radius: 0 !important;
+  background: var(--keygen-chrome) !important;
+  clip-path: none !important;
+  box-shadow: 3px 3px 0 #000;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html.dark[data-skin="keygen-98"] .chat-composer-glass-host {
+  border-radius: 0 !important;
+  background: #030604 var(--keygen-scanlines) !important;
+  box-shadow:
+    inset 1px 1px 0 #101710,
+    inset -1px -1px 0 #000 !important;
+}
+
+html.dark[data-skin="keygen-98"] .chat-composer-glass-host::after {
+  border: 2px inset var(--keygen-chrome) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  clip-path: none !important;
+}
+
+html.dark[data-skin="keygen-98"] .chat-composer-context-strip::before {
+  border: 2px inset var(--keygen-chrome) !important;
+  border-radius: 0 !important;
+  background: #071009 !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+  box-shadow: none !important;
+}
+
+html.dark[data-skin="keygen-98"] .chat-composer-glass-shell [data-slot="button"],
+html.dark[data-skin="keygen-98"] .chat-composer-glass-shell [data-slot="select-trigger"] {
+  min-height: 1.5rem;
+  background: linear-gradient(to bottom, #c6c8c6, #8f928f) !important;
+  color: #050705 !important;
+  font-weight: 700 !important;
+}
+
+/* Message typography and code panes. */
+html.dark[data-skin="keygen-98"] [data-message-role="user"]::before,
+html.dark[data-skin="keygen-98"] [data-message-role="assistant"]::before {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--keygen-cyan);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+html.dark[data-skin="keygen-98"] [data-message-role="user"]::before {
+  content: ">> OPERATOR INPUT";
+  text-align: right;
+}
+
+html.dark[data-skin="keygen-98"] [data-message-role="assistant"]::before {
+  content: ">> SYSTEM OUTPUT";
+}
+
+html.dark[data-skin="keygen-98"] [data-message-role="user"] > .group > .relative {
+  border: 2px ridge var(--keygen-chrome) !important;
+  border-radius: 0 !important;
+  background: #0b1e10 var(--keygen-scanlines) !important;
+  box-shadow:
+    inset 1px 1px 0 #1b3b20,
+    inset -1px -1px 0 #020402;
+}
+
+html.dark[data-skin="keygen-98"] .chat-markdown {
+  color: #e5eee2;
+  text-shadow: 0 0 4px rgb(98 243 68 / 8%);
+}
+
+html.dark[data-skin="keygen-98"] .chat-markdown h1,
+html.dark[data-skin="keygen-98"] .chat-markdown h2,
+html.dark[data-skin="keygen-98"] .chat-markdown h3,
+html.dark[data-skin="keygen-98"] .chat-markdown h4,
+html.dark[data-skin="keygen-98"] .chat-markdown h5,
+html.dark[data-skin="keygen-98"] .chat-markdown h6 {
+  color: var(--keygen-green);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+}
+
+html.dark[data-skin="keygen-98"] .chat-markdown h1::before,
+html.dark[data-skin="keygen-98"] .chat-markdown h2::before,
+html.dark[data-skin="keygen-98"] .chat-markdown h3::before {
+  content: ">> ";
+  color: var(--keygen-cyan);
+}
+
+html.dark[data-skin="keygen-98"] .chat-markdown a {
+  color: var(--keygen-cyan);
+}
+
+html.dark[data-skin="keygen-98"] .chat-markdown strong {
+  color: var(--keygen-magenta);
+}
+
+html.dark[data-skin="keygen-98"] .chat-markdown blockquote {
+  border-left: 4px double var(--keygen-green);
+  background: #071009;
+  color: #9feec2;
+}
+
+html.dark[data-skin="keygen-98"] .chat-markdown :not(pre) > code {
+  border: 1px solid #526256;
+  border-radius: 0;
+  background: #020503;
+  color: var(--keygen-cyan);
+}
+
+html.dark[data-skin="keygen-98"] .chat-markdown .chat-markdown-codeblock,
+html.dark[data-skin="keygen-98"] .chat-markdown pre {
+  border: 3px ridge var(--keygen-chrome);
+  border-radius: 0;
+  background: #020503 var(--keygen-scanlines);
+  box-shadow:
+    inset 1px 1px 0 #0d180f,
+    inset -1px -1px 0 #000;
+}
+
+html.dark[data-skin="keygen-98"] .chat-markdown .chat-markdown-codeblock-header {
+  border-bottom: 1px solid #32513a;
+  background: #071009;
+  color: var(--keygen-cyan);
+}
+
+html.dark[data-skin="keygen-98"] .chat-markdown .chat-markdown-codeblock pre {
+  border: 0;
+  box-shadow: none;
+}
+
+html.dark[data-skin="keygen-98"] .chat-markdown .chat-markdown-shiki .shiki {
+  background: transparent !important;
+  color: #bfffb1 !important;
+}
+
+html.dark[data-skin="keygen-98"] .chat-markdown .chat-markdown-shiki .line:nth-child(3n + 1) span {
+  text-shadow: 0 0 4px rgb(98 243 68 / 12%);
+}
+
+html.dark[data-skin="keygen-98"] .chat-markdown table {
+  border: 2px inset var(--keygen-chrome);
+  background: #030604;
+}
+
+html.dark[data-skin="keygen-98"] .chat-markdown th {
+  background: #12351a;
+  color: var(--keygen-green);
+  text-transform: uppercase;
+}
+
+html.dark[data-skin="keygen-98"] [data-slot="badge"] {
+  border: 1px solid #417a48 !important;
+  border-radius: 0 !important;
+  background: #061009 !important;
+  color: var(--keygen-green) !important;
+  box-shadow: inset 1px 1px 0 #15331b;
+  text-transform: uppercase;
+}
+
+html.dark[data-skin="keygen-98"] [data-right-panel-tabbar] {
+  border-bottom: 3px ridge var(--keygen-chrome);
+}
+
+html.dark[data-skin="keygen-98"] [data-active-tab="true"] {
+  border: 1px solid #55735a;
+  border-radius: 0 !important;
+  background: #0d2614 !important;
+  color: var(--keygen-green) !important;
+}
+
+html.dark[data-skin="keygen-98"] ::selection {
+  background: var(--keygen-green);
+  color: #020402;
+}
+
+/* Chunky native-looking scrollbars complete the utility-window frame. */
+html.dark[data-skin="keygen-98"] ::-webkit-scrollbar-track {
+  border: 1px inset var(--keygen-chrome);
+  background: #777b77;
+}
+
+html.dark[data-skin="keygen-98"] ::-webkit-scrollbar-thumb {
+  min-height: 20px;
+  border: 2px outset var(--keygen-chrome);
+  border-radius: 0;
+  background: var(--keygen-chrome);
+}
+
+html.dark[data-skin="keygen-98"] ::-webkit-scrollbar-thumb:hover {
+  background: #d2d4d2;
+}
+
+html.dark[data-skin="keygen-98"] ::-webkit-scrollbar-corner {
+  background: var(--keygen-chrome);
+}
