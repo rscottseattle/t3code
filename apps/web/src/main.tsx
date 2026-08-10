@@ -15,7 +15,6 @@ import "./skins/charcoal-skins.css";
 import "./skins/glass-aurora.css";
 import "./skins/keygen-98.css";
 import { bootstrapSkin } from "./hooks/useSkin";
-import { bootstrapUiFont } from "./hooks/useUiFont";
 import { isElectron } from "./env";
 import { ManagedRelayAuthProvider } from "./cloud/managedAuth";
 import { hasCloudPublicConfig } from "./cloud/publicConfig";
@@ -28,7 +27,6 @@ import { AppRoot } from "./AppRoot";
 
 // Apply fork appearance before first paint.
 bootstrapSkin();
-bootstrapUiFont();
 
 // Electron loads the app from a file-backed shell, so hash history avoids path resolution issues.
 const history = isElectron ? createHashHistory() : createBrowserHistory();

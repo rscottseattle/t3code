@@ -5,7 +5,7 @@ import {
 } from "@t3tools/shared/projectFavicon";
 import type { ComponentType, ReactNode } from "react";
 import { useState } from "react";
-import { useAssetUrl } from "../assets/assetUrls";
+import { useAssetUrlState } from "../assets/assetUrls";
 import { cn } from "~/lib/utils";
 import { ProjectMonogram } from "./ProjectMonogram";
 
@@ -14,6 +14,7 @@ const loadedProjectFaviconSrcs = new Map<string, string>();
 export function ProjectFavicon(input: {
   environmentId: EnvironmentId;
   cwd: string;
+  faviconPath?: string | null | undefined;
   className?: string | undefined;
   /**
    * Optional icon component when no project favicon exists.
@@ -27,11 +28,8 @@ export function ProjectFavicon(input: {
   /** When true, render nothing if no real favicon is available. */
   hideFallback?: boolean | undefined;
 }) {
-  const src = useAssetUrl(input.environmentId, {
-    _tag: "project-favicon",
-    cwd: input.cwd,
-  });
-
+  const state = useProjectFaviconAsset(input);
+  const src = state._tag === "Success" ? state.url : null;
   const fallbackNode = resolveProjectFaviconFallback(input);
 
   if (!src || isProjectFaviconFallbackUrl(src)) {
@@ -51,6 +49,18 @@ export function ProjectFavicon(input: {
   );
 }
 
+export function useProjectFaviconAsset(input: {
+  readonly environmentId: EnvironmentId;
+  readonly cwd: string;
+  readonly faviconPath?: string | null | undefined;
+}) {
+  return useAssetUrlState(input.environmentId, {
+    _tag: "project-favicon",
+    cwd: input.cwd,
+    ...(input.faviconPath ? { path: input.faviconPath } : {}),
+  });
+}
+
 function resolveProjectFaviconFallback(input: {
   className?: string | undefined;
   fallbackIcon?: ComponentType<{ className?: string }> | undefined;
@@ -62,7 +72,7 @@ function resolveProjectFaviconFallback(input: {
   if (input.fallback !== undefined) return input.fallback;
   if (input.fallbackIcon) {
     const Icon = input.fallbackIcon;
-    return <Icon className={cn("size-3.5 shrink-0 text-muted-foreground/50", input.className)} />;
+    return <Icon className={cn("size-3.5 shrink-0 text-icon-muted", input.className)} />;
   }
   if (input.fallbackLabel) {
     return <ProjectMonogram label={input.fallbackLabel} className={input.className} />;
