@@ -100,6 +100,7 @@ import {
   saveConnection,
   savePreferencesPatch,
 } from "../persistence/imperative";
+import { resolveMobileAutoSettlePreferences } from "../persistence/mobile-preferences";
 import { toStableSavedRemoteConnection } from "./connection";
 
 const managedConnection = {
@@ -177,6 +178,59 @@ describe("mobile connection storage", () => {
     await expect(loadPreferences()).resolves.toEqual({ baseFontSize: 17 });
   });
 
+  it("persists independent light and dark theme choices", async () => {
+    mocks.setPreferencesJson(
+      JSON.stringify({
+        themeId: "grove",
+        lightThemeId: "iris",
+        darkThemeId: "ocean",
+        themeMode: "system",
+      }),
+      10,
+    );
+
+    await expect(loadPreferences()).resolves.toEqual({
+      themeId: "grove",
+      lightThemeId: "iris",
+      darkThemeId: "ocean",
+      themeMode: "system",
+    });
+  });
+
+  it("drops the removed theme transition preference", async () => {
+    mocks.setPreferencesJson(JSON.stringify({ themeTransition: "circle-bottom-left" }), 10);
+
+    await expect(loadPreferences()).resolves.toEqual({});
+  });
+
+  it("defaults retired mobile settling preferences to manual-only", async () => {
+    mocks.setPreferencesJson(JSON.stringify({ autoSettleOnMerge: true }), 10);
+
+    const preferences = await loadPreferences();
+    expect(preferences).toEqual({});
+    expect(resolveMobileAutoSettlePreferences(preferences)).toEqual({
+      autoSettleMode: "never",
+      autoSettleAfterDays: 3,
+    });
+  });
+
+  it("preserves valid mobile settling preferences", async () => {
+    mocks.setPreferencesJson(
+      JSON.stringify({ autoSettleMode: "inactivity", autoSettleAfterDays: 30 }),
+      10,
+    );
+
+    const preferences = await loadPreferences();
+    expect(preferences).toEqual({
+      autoSettleMode: "inactivity",
+      autoSettleAfterDays: 30,
+    });
+    expect(resolveMobileAutoSettlePreferences(preferences)).toEqual({
+      autoSettleMode: "inactivity",
+      autoSettleAfterDays: 30,
+    });
+  });
+
   it("falls back to secure storage when SQLite cannot save preferences", async () => {
     mocks.setDatabaseFailures(true, true);
     await expect(savePreferencesPatch({ baseFontSize: 19 })).resolves.toEqual({ baseFontSize: 19 });
@@ -186,6 +240,40 @@ describe("mobile connection storage", () => {
     };
     expect(JSON.parse(fallback.payload)).toEqual({ baseFontSize: 19 });
     expect(fallback.updatedAt).toEqual(expect.any(Number));
+  });
+
+  it("persists Thread List v2 shelf expansion preferences", async () => {
+    await expect(
+      savePreferencesPatch({
+        threadListV2SettledShelfExpanded: false,
+        threadListV2SnoozedShelfExpanded: true,
+      }),
+    ).resolves.toEqual({
+      threadListV2SettledShelfExpanded: false,
+      threadListV2SnoozedShelfExpanded: true,
+    });
+
+    await expect(loadPreferences()).resolves.toEqual({
+      threadListV2SettledShelfExpanded: false,
+      threadListV2SnoozedShelfExpanded: true,
+    });
+    expect(JSON.parse(mocks.getPreferencesJson() ?? "")).toEqual({
+      threadListV2SettledShelfExpanded: false,
+      threadListV2SnoozedShelfExpanded: true,
+    });
+  });
+
+  it("ignores invalid Thread List v2 shelf expansion preference types", async () => {
+    mocks.setPreferencesJson(
+      JSON.stringify({
+        baseFontSize: 17,
+        threadListV2SettledShelfExpanded: "false",
+        threadListV2SnoozedShelfExpanded: 1,
+      }),
+      10,
+    );
+
+    await expect(loadPreferences()).resolves.toEqual({ baseFontSize: 17 });
   });
 
   it("reconciles fallback preferences after SQLite recovers", async () => {

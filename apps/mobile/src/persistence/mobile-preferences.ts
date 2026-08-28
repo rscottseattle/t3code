@@ -5,7 +5,16 @@ import * as Option from "effect/Option";
 import * as Ref from "effect/Ref";
 import * as Schema from "effect/Schema";
 import * as Semaphore from "effect/Semaphore";
-import type { SidebarProjectGroupingMode } from "@t3tools/contracts";
+import {
+  DEFAULT_SIDEBAR_AUTO_SETTLE_AFTER_DAYS,
+  DEFAULT_SIDEBAR_AUTO_SETTLE_MODE,
+  MAX_SIDEBAR_AUTO_SETTLE_AFTER_DAYS,
+  MIN_SIDEBAR_AUTO_SETTLE_AFTER_DAYS,
+  type SidebarAutoSettleAfterDays,
+  type SidebarAutoSettleMode,
+  type SidebarProjectGroupingMode,
+} from "@t3tools/contracts";
+import { MOBILE_THEME_IDS, type MobileThemeId, type MobileThemeMode } from "../lib/mobileTheme";
 
 import * as MobileDatabase from "./mobile-database";
 import * as MobileSecureStorage from "./mobile-secure-storage";
@@ -16,6 +25,10 @@ const PREFERENCES_FALLBACK_KEY = "t3code.preferences.fallback";
 
 export interface Preferences {
   readonly liveActivitiesEnabled?: boolean;
+  readonly themeId?: MobileThemeId;
+  readonly lightThemeId?: MobileThemeId;
+  readonly darkThemeId?: MobileThemeId;
+  readonly themeMode?: MobileThemeMode;
   readonly baseFontSize?: number;
   readonly terminalFontSize?: number | null;
   readonly markdownFontSize?: number;
@@ -26,6 +39,8 @@ export interface Preferences {
   /** @deprecated Kept temporarily so older OTA bundles retain the selected mode. */
   readonly projectGroupingEnabled?: boolean;
   readonly projectGroupingMode?: SidebarProjectGroupingMode;
+  readonly autoSettleMode?: SidebarAutoSettleMode;
+  readonly autoSettleAfterDays?: SidebarAutoSettleAfterDays;
   /**
    * Device-local mirror of the web `legacySidebarEnabled` setting. Mobile has
    * no client-settings sync, so the legacy grouped thread list is opted into
@@ -34,6 +49,12 @@ export interface Preferences {
    * default flat list — see `resolveThreadListV2Enabled`.
    */
   readonly legacyThreadListEnabled?: boolean;
+  /** Device-local counterpart of desktop's `planModeEnabled` legacy flag. */
+  readonly planModeEnabled?: boolean;
+  /** Undefined preserves the default expanded Settled shelf. */
+  readonly threadListV2SettledShelfExpanded?: boolean;
+  /** Undefined preserves the default collapsed Snoozed shelf. */
+  readonly threadListV2SnoozedShelfExpanded?: boolean;
 }
 
 export class MobilePreferencesLoadError extends Schema.TaggedErrorClass<MobilePreferencesLoadError>()(
@@ -76,6 +97,10 @@ export class MobilePreferencesStore extends Context.Service<
 function sanitizePreferences(parsed: Preferences): Preferences {
   const preferences: {
     liveActivitiesEnabled?: boolean;
+    themeId?: MobileThemeId;
+    lightThemeId?: MobileThemeId;
+    darkThemeId?: MobileThemeId;
+    themeMode?: MobileThemeMode;
     baseFontSize?: number;
     terminalFontSize?: number | null;
     markdownFontSize?: number;
@@ -85,11 +110,41 @@ function sanitizePreferences(parsed: Preferences): Preferences {
     collapsedProjectGroups?: readonly string[];
     projectGroupingEnabled?: boolean;
     projectGroupingMode?: SidebarProjectGroupingMode;
+    autoSettleMode?: SidebarAutoSettleMode;
+    autoSettleAfterDays?: SidebarAutoSettleAfterDays;
     legacyThreadListEnabled?: boolean;
+    planModeEnabled?: boolean;
+    threadListV2SettledShelfExpanded?: boolean;
+    threadListV2SnoozedShelfExpanded?: boolean;
   } = {};
 
   if (typeof parsed.liveActivitiesEnabled === "boolean") {
     preferences.liveActivitiesEnabled = parsed.liveActivitiesEnabled;
+  }
+  if (
+    typeof parsed.themeId === "string" &&
+    (MOBILE_THEME_IDS as readonly string[]).includes(parsed.themeId)
+  ) {
+    preferences.themeId = parsed.themeId as MobileThemeId;
+  }
+  if (
+    typeof parsed.lightThemeId === "string" &&
+    (MOBILE_THEME_IDS as readonly string[]).includes(parsed.lightThemeId)
+  ) {
+    preferences.lightThemeId = parsed.lightThemeId as MobileThemeId;
+  }
+  if (
+    typeof parsed.darkThemeId === "string" &&
+    (MOBILE_THEME_IDS as readonly string[]).includes(parsed.darkThemeId)
+  ) {
+    preferences.darkThemeId = parsed.darkThemeId as MobileThemeId;
+  }
+  if (
+    parsed.themeMode === "system" ||
+    parsed.themeMode === "light" ||
+    parsed.themeMode === "dark"
+  ) {
+    preferences.themeMode = parsed.themeMode;
   }
   if (typeof parsed.baseFontSize === "number") preferences.baseFontSize = parsed.baseFontSize;
   if (typeof parsed.terminalFontSize === "number" || parsed.terminalFontSize === null) {
@@ -122,10 +177,44 @@ function sanitizePreferences(parsed: Preferences): Preferences {
   ) {
     preferences.projectGroupingMode = parsed.projectGroupingMode;
   }
+  if (
+    parsed.autoSettleMode === "never" ||
+    parsed.autoSettleMode === "change-request" ||
+    parsed.autoSettleMode === "inactivity"
+  ) {
+    preferences.autoSettleMode = parsed.autoSettleMode;
+  }
+  if (
+    typeof parsed.autoSettleAfterDays === "number" &&
+    Number.isInteger(parsed.autoSettleAfterDays) &&
+    parsed.autoSettleAfterDays >= MIN_SIDEBAR_AUTO_SETTLE_AFTER_DAYS &&
+    parsed.autoSettleAfterDays <= MAX_SIDEBAR_AUTO_SETTLE_AFTER_DAYS
+  ) {
+    preferences.autoSettleAfterDays = parsed.autoSettleAfterDays;
+  }
   if (typeof parsed.legacyThreadListEnabled === "boolean") {
     preferences.legacyThreadListEnabled = parsed.legacyThreadListEnabled;
   }
+  if (typeof parsed.planModeEnabled === "boolean") {
+    preferences.planModeEnabled = parsed.planModeEnabled;
+  }
+  if (typeof parsed.threadListV2SettledShelfExpanded === "boolean") {
+    preferences.threadListV2SettledShelfExpanded = parsed.threadListV2SettledShelfExpanded;
+  }
+  if (typeof parsed.threadListV2SnoozedShelfExpanded === "boolean") {
+    preferences.threadListV2SnoozedShelfExpanded = parsed.threadListV2SnoozedShelfExpanded;
+  }
   return preferences;
+}
+
+export function resolveMobileAutoSettlePreferences(preferences: Preferences): {
+  readonly autoSettleMode: SidebarAutoSettleMode;
+  readonly autoSettleAfterDays: SidebarAutoSettleAfterDays;
+} {
+  return {
+    autoSettleMode: preferences.autoSettleMode ?? DEFAULT_SIDEBAR_AUTO_SETTLE_MODE,
+    autoSettleAfterDays: preferences.autoSettleAfterDays ?? DEFAULT_SIDEBAR_AUTO_SETTLE_AFTER_DAYS,
+  };
 }
 
 export const make = Effect.fn("MobilePreferencesStore.make")(function* () {

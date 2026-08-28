@@ -1,6 +1,5 @@
 import type { ServerProvider, ServerProviderSkill } from "@t3tools/contracts";
-
-import { formatProviderSkillDisplayName } from "./providerSkillPresentation";
+import { formatProviderSkillDisplayName } from "@t3tools/client-runtime/providerSkills";
 
 export const SKILL_CATEGORIES = [
   { id: "video", label: "Video" },
